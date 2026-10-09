@@ -606,7 +606,8 @@ function flash(t) { msg = t; msgUntil = performance.now() + 1400; dirty = true; 
 const FG = '#e9f6ff', DIM = '#3b4a55', MID = '#8fa2ae', BG = '#05070a';
 const F = s => s + 'px VT323, "DejaVu Sans Mono", monospace';
 const GX = 84, GY = 34;   // grid origin inside the OLED
-function gridGeom() { const rows = isMel() ? 10 : 8; return { cw: (OW - GX - 12) / STEPS, rh: (OH - GY - 70) / rows, rows }; }
+// synth pages keep a thin strip above and below the grid for notes that are out of view
+function gridGeom() { const mel = isMel(), rows = mel ? 10 : 8, pad = mel ? 9 : 0; return { cw: (OW - GX - 12) / STEPS, rh: (OH - GY - 70 - 2 * pad) / rows, rows, gy: GY + pad }; }
 function drawOled() {
   const now = performance.now(), ph = shown && shown.pat === state.pat ? shown : null;
   og.fillStyle = BG; og.fillRect(0, 0, OW, OH);
@@ -624,11 +625,11 @@ function drawOled() {
   og.textAlign = 'right'; og.fillText((liveRec ? 'REC ' : '') + '♩=' + state.bpm.toFixed(0), OW - 12, 17);
   og.textAlign = 'left';
   og.fillStyle = DIM; og.fillRect(12, 28, OW - 24, 1);
-  const { cw, rh, rows } = gridGeom();
+  const { cw, rh, rows, gy } = gridGeom();
   og.font = F(17);
   if (!isMel()) {
     TRACKS.forEach((tr, i) => {
-      const y = GY + i * rh, on = isOn(state.kit[i]);
+      const y = gy + i * rh, on = isOn(state.kit[i]);
       if (i === state.sel) { og.fillStyle = FG; og.fillRect(12, y + 1, GX - 18, rh - 2); og.fillStyle = BG; }
       else og.fillStyle = on ? MID : DIM;
       og.fillText(tr.short + (state.kit[i].mute ? ' M' : state.kit[i].solo ? ' S' : ''), 15, y + rh / 2 + 1);
@@ -642,7 +643,7 @@ function drawOled() {
     const m = curMel(), b = baseDeg(), N = scaleIv().length, root = state.key.root;
     const sAbs = ph ? ph.abs % m.len : -1;
     for (let k = 0; k < rows; k++) {
-      const D = b + rows - 1 - k + rollOff, r = degToR(D), y = GY + k * rh;
+      const D = b + rows - 1 - k + rollOff, r = degToR(D), y = gy + k * rh;
       og.fillStyle = mod(D, N) === 0 ? FG : MID;
       og.fillText(noteName(r + root), 15, y + rh / 2 + 1);
       for (let s = 0; s < STEPS; s++) {
@@ -651,13 +652,25 @@ function drawOled() {
         og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5);
       }
     }
+    const off = [0, 0];   // notes hidden above, below
     for (const n of m.notes) {
       const D = rToDeg(n.r), k = b + rows - 1 + rollOff - D;
-      if (k < 0 || k >= rows) { og.fillStyle = MID; og.fillRect(GX + n.s * cw + 2, k < 0 ? GY - 3 : GY + rows * rh + 1, cw - 5, 2); continue; }
-      const y = GY + k * rh, x = GX + n.s * cw, w = Math.min(n.l, STEPS - n.s) * cw;
+      if (k < 0 || k >= rows) {   // out of view: an arrow in the strip, pointing the way to scroll
+        const up = k < 0, cx = GX + (n.s + 0.5) * cw, ty = up ? gy - 8 : gy + rows * rh + 1;
+        off[up ? 0 : 1]++;
+        og.fillStyle = n === selNote ? FG : MID; og.beginPath();
+        if (up) { og.moveTo(cx - 5, ty + 7); og.lineTo(cx + 5, ty + 7); og.lineTo(cx, ty); }
+        else { og.moveTo(cx - 5, ty); og.lineTo(cx + 5, ty); og.lineTo(cx, ty + 7); }
+        og.fill(); continue;
+      }
+      const y = gy + k * rh, x = GX + n.s * cw, w = Math.min(n.l, STEPS - n.s) * cw;
       og.fillStyle = FG; og.globalAlpha = 0.35 + 0.65 * n.v; og.fillRect(x + 1, y + 2, w - 3, rh - 4); og.globalAlpha = 1;
       if (n === selNote) { og.strokeStyle = FG; og.lineWidth = 2; og.strokeRect(x - 1, y, w + 1, rh); og.lineWidth = 1; }
     }
+    // how many notes are hidden each way; tapping a strip scrolls that way
+    og.font = F(15); og.fillStyle = FG;
+    if (off[0]) og.fillText('▲' + off[0] + ' MORE', 12, gy - 4);
+    if (off[1]) og.fillText('▼' + off[1] + ' MORE', 12, gy + rows * rh + 5);
   }
   // the four lower encoders, as on-screen dials
   const pg = page(), y0 = OH - 30;
@@ -677,12 +690,21 @@ function drawOled() {
     og.fillStyle = BG; og.textAlign = 'center'; og.fillText(msg, OW / 2, OH / 2 - 2); og.textAlign = 'left';
   } else if (msg) { msg = ''; }
 }
-let rollOff = 0;
+let rollOff = 0, followed = '';
+function scrollNotes(by) { rollOff += by; followed = selNote ? selNote.s + ':' + selNote.r : ''; refresh(); }
+// when a different note is chosen, or its pitch changes, move the screen so it is in view
+function followSel() {
+  if (!isMel() || !selNote) { followed = ''; return; }
+  const key = selNote.s + ':' + selNote.r; if (key === followed) return; followed = key;
+  const rows = 10, D = rToDeg(selNote.r), top = baseDeg() + rows - 1 + rollOff;
+  if (D > top) rollOff += D - top; else if (D < top - rows + 1) rollOff -= top - rows + 1 - D;
+}
 // tapping the screen edits it directly
 oled.addEventListener('pointerdown', e => {
   e.preventDefault(); initAudio();
   const r = oled.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * OW, y = (e.clientY - r.top) / r.height * OH;
-  const { cw, rh, rows } = gridGeom(), row = Math.floor((y - GY) / rh), s = Math.floor((x - GX) / cw);
+  const { cw, rh, rows, gy } = gridGeom(), row = Math.floor((y - gy) / rh), s = Math.floor((x - GX) / cw);
+  if (isMel() && (row < 0 || row >= rows) && y > GY && y < gy + rows * rh + 12) { scrollNotes(row < 0 ? 3 : -3); return; }
   if (row < 0 || row >= rows) return;
   if (!isMel()) {
     if (x < GX) { selectTrack(row); return; }
@@ -992,6 +1014,7 @@ function leds() {
   $('lOut').className = 'led' + (midiOn ? ' o' : '');
 }
 function refresh() {
+  followSel();
   const mel = isMel();
   document.querySelectorAll('[data-mode]').forEach(k => k.classList.toggle('lit', String(state.mode) === k.dataset.mode));
   $('kScale').classList.toggle('lit', scaleMode);
