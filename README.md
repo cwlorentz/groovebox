@@ -1,7 +1,8 @@
 # GL-8 Groovebox
 
 The Grid Looper's drum kit and synths behind a hardware-style panel: 8 drum tracks,
-Bass/Lead/Pad synths, 8 patterns, live record and Web MIDI out/in.
+Bass/Lead/Pad synths, an on-screen KEYS piano that records into the loop, 8 patterns,
+live record and Web MIDI out/in.
 
 Live: https://cwlorentz.github.io/groovebox/
 
