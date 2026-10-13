@@ -90,6 +90,16 @@ h5.silk{grid-column:1/-1}
 #presets .list .k small{font-size:9.5px;font-weight:500;letter-spacing:.08em;color:var(--silk2)}
 #presets .row{display:flex;justify-content:flex-end}
 #presets .row .k{height:44px;width:120px;font-size:12px}
+#confirm{position:absolute;inset:0;z-index:6;display:grid;place-items:center;background:#0e0e10cc;border-radius:14px}
+#confirm[hidden]{display:none}
+#confirm .box{width:440px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:10px}
+#confirm .disp{background:#05070a;border-radius:4px;padding:8px 14px;font-family:VT323,monospace;color:#ff7a6e;font-size:26px}
+#confirm p{margin:0;color:var(--silk);font-size:13px;line-height:1.4}
+#confirm .row{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+#confirm .row .k{height:48px;min-width:120px;padding:0 16px;font-size:12px}
+.k.clr{color:#fff;background:linear-gradient(#c8321f,#962112);box-shadow:0 2px 0 #3a0c06,0 3px 6px #000a,inset 0 1px 0 #ffffff40}
+.pads .cl2{grid-column:span 2;grid-row:4;height:34px;font-size:10px;white-space:nowrap}
+.k.clr.down{background:linear-gradient(#962112,#7a1a0d)}
 #unit.tall #presets .list{grid-template-columns:repeat(2,1fr);max-height:none}
 #entry .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:330px;overflow:auto}
 #entry .opts .k{height:46px;font-size:12px}
@@ -229,6 +239,7 @@ h5.silk{grid-column:1/-1}
 </head>
 <body>
 <div id="stage"><div id="unit">
+  <div id="confirm" hidden><div class="box"><div class="disp"><span id="cfTitle"></span></div><p id="cfText"></p><p>UNDO brings it back.</p><div class="row"><div class="k" id="cfNo">CANCEL</div><div class="k clr" id="cfYes"></div></div></div></div>
   <div id="presets" hidden><div class="box"><div class="disp"><span>PRESET BEATS</span><small id="preTo"></small></div><div class="list" id="preList"></div><div class="row"><div class="k" id="preX">CANCEL</div></div></div></div>
   <div id="entry" hidden><div class="box"><div class="disp"><div class="t"><span id="enName"></span><span id="enRange"></span></div><div class="v" id="enVal"></div></div><div id="enKeys"></div></div></div>
   <div class="screw" style="left:8px;top:8px"></div><div class="screw" style="right:8px;top:8px"></div><div class="screw" style="left:8px;bottom:8px"></div><div class="screw" style="right:8px;bottom:8px"></div>
@@ -260,11 +271,11 @@ h5.silk{grid-column:1/-1}
   <div class="trk" id="trk"></div>
 
   <div class="trig">
-    <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5></div>
+    <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5><div class="k clr cl2" id="kClrMode">CLEAR DRUMS</div><div class="k clr cl2" id="kClrAll">CLEAR ALL</div></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><div class="k clr">CLEAR</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
-      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><div class="k clr">CLEAR</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
+      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kb" id="kb"></div>
       <div class="dk" id="dk"></div>
@@ -1493,6 +1504,27 @@ function wireDrumPads() {
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
 }
 
+/* clearing a whole page (or all of them) in the current pattern, with a confirmation first */
+let confirmAll = false;
+const pageName = () => isMel() ? MEL[state.mode].name.toUpperCase() : 'DRUMS';
+function openConfirm(all) {
+  confirmAll = all;
+  const pl = 'ABCDEFGH'[state.pat];
+  $('cfTitle').textContent = all ? 'CLEAR ALL?' : 'CLEAR ' + pageName() + '?';
+  $('cfText').textContent = all ? 'Removes every drum hit and every Bass, Lead and Pad note in pattern ' + pl + '.'
+    : isMel() ? 'Removes every ' + MEL[state.mode].name + ' note in pattern ' + pl + '.' : 'Removes every hit on all 8 drum tracks in pattern ' + pl + '.';
+  $('cfYes').textContent = all ? 'CLEAR ALL' : 'CLEAR ' + pageName();
+  $('confirm').hidden = false;
+}
+function closeConfirm() { $('confirm').hidden = true; }
+function clearNotes(all) {
+  const p = pat();
+  remember();
+  if (all || !isMel()) p.drums.forEach(r => r.fill(false));
+  if (all) p.mel.forEach(m => { m.notes = []; }); else if (isMel()) curMel().notes = [];
+  selNote = null; flash(all ? 'CLEARED ALL · ' + 'ABCDEFGH'[state.pat] : 'CLEARED ' + pageName()); save(); refresh();
+}
+
 /* function keys */
 let clip = null;
 function wire() {
@@ -1540,13 +1572,12 @@ function wire() {
     liveRec = !liveRec; take = false; stepReset(); stepCur = 0;
     flash(!liveRec ? 'REC OFF' : playing ? 'LIVE REC: TAP KEYS' : 'STEP REC: STEP 1'); refresh();
   });
-  // CLEAR beside the keyboard / pads: empties the synth track, or the selected drum (UNDO brings it back)
-  document.querySelectorAll('.clr').forEach(k => press(k, () => {
-    remember();
-    if (isMel()) { curMel().notes = []; flash('CLEARED ' + MEL[state.mode].name.toUpperCase()); }
-    else { pat().drums[state.sel].fill(false); flash('CLEARED ' + TRACKS[state.sel].short); }
-    selNote = null; save(); refresh();
-  }));
+  // red CLEAR keys in the top strip: this page's notes, or every page, after a confirmation (UNDO brings them back)
+  press($('kClrMode'), () => openConfirm(false));
+  press($('kClrAll'), () => openConfirm(true));
+  press($('cfNo'), closeConfirm);
+  press($('cfYes'), () => { const all = confirmAll; closeConfirm(); clearNotes(all); });
+  $('confirm').addEventListener('pointerdown', e => { if (e.target.id === 'confirm') { e.preventDefault(); closeConfirm(); } });
   document.querySelectorAll('.sc [data-st]').forEach(k => press(k, () => {
     const by = +k.dataset.st; stepMove(by, by ? null : 0); flash('STEP ' + (stepCur + 1));
   }));
@@ -1598,6 +1629,7 @@ function refresh() {
   unit.classList.toggle('pads', dpads);
   $('kKeys').classList.toggle('lit', !!state.keysOn);
   $('kKeys').textContent = mel ? 'KEYS' : 'PADS';
+  $('kClrMode').textContent = 'CLEAR ' + pageName();
   if (keys) { buildKb(); renderKbBar(); } else if (kbHeld.size) kbAllUp();
   if (dpads) { if (padsNew) layoutPads(); renderDrumPads(); }
   renderKnobs(); renderTrigs(); renderPads(); leds();
