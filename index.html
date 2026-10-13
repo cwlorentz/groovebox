@@ -80,16 +80,16 @@ h5.silk{grid-column:1/-1}
 #entry .pad .k{height:52px;font-size:18px}
 #entry .pad .k.wide{grid-column:span 2}
 #entry .pad .k.ok{color:var(--grn)}
-#presets{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#0e0e10b3;border-radius:14px}
-#presets[hidden]{display:none}
-#presets .box{width:660px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:12px}
-#presets .disp{background:#05070a;border-radius:4px;padding:8px 14px;font-family:VT323,monospace;color:#e9f6ff;font-size:22px;display:flex;justify-content:space-between;gap:12px}
-#presets .disp small{font-size:18px;color:#8fa2ae}
-#presets .list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:430px;overflow:auto}
-#presets .list .k{height:58px;flex-direction:column;gap:3px;font-size:13px}
-#presets .list .k small{font-size:9.5px;font-weight:500;letter-spacing:.08em;color:var(--silk2)}
-#presets .row{display:flex;justify-content:flex-end}
-#presets .row .k{height:44px;width:120px;font-size:12px}
+#presets,#sounds{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#0e0e10b3;border-radius:14px}
+#presets[hidden],#sounds[hidden]{display:none}
+#presets .box,#sounds .box{width:660px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:12px}
+#presets .disp,#sounds .disp{background:#05070a;border-radius:4px;padding:8px 14px;font-family:VT323,monospace;color:#e9f6ff;font-size:22px;display:flex;justify-content:space-between;gap:12px}
+#presets .disp small,#sounds .disp small{font-size:18px;color:#8fa2ae}
+#presets .list,#sounds .list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:430px;overflow:auto}
+#presets .list .k,#sounds .list .k{height:58px;flex-direction:column;gap:3px;font-size:13px}
+#presets .list .k small,#sounds .list .k small{font-size:9.5px;font-weight:500;letter-spacing:.08em;color:var(--silk2)}
+#presets .row,#sounds .row{display:flex;justify-content:flex-end}
+#presets .row .k,#sounds .row .k{height:44px;width:120px;font-size:12px}
 #confirm{position:absolute;inset:0;z-index:6;display:grid;place-items:center;background:#0e0e10cc;border-radius:14px}
 #confirm[hidden]{display:none}
 #confirm .box{width:440px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:10px}
@@ -100,7 +100,7 @@ h5.silk{grid-column:1/-1}
 .k.clr{color:#fff;background:linear-gradient(#c8321f,#962112);box-shadow:0 2px 0 #3a0c06,0 3px 6px #000a,inset 0 1px 0 #ffffff40}
 .pads .cl2{grid-column:span 2;grid-row:4;height:27px;font-size:10px;white-space:nowrap}
 .k.clr.down{background:linear-gradient(#962112,#7a1a0d)}
-#unit.tall #presets .list{grid-template-columns:repeat(2,1fr);max-height:none}
+#unit.tall #presets .list,#unit.tall #sounds .list{grid-template-columns:repeat(2,1fr);max-height:none}
 #entry .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:330px;overflow:auto}
 #entry .opts .k{height:46px;font-size:12px}
 .e.off{opacity:.35}
@@ -158,6 +158,9 @@ h5.silk{grid-column:1/-1}
 .kbbar .k.in{min-width:150px}
 .kbbar #kbFx{min-width:80px}
 .kbbar .snd{min-width:112px}
+#sounds .list .k.cur{color:#ffcf9e;box-shadow:0 2px 0 #121214,0 0 14px #ff8a1f55,inset 0 0 10px #ff8a1f55}
+#sounds .list .k.wait{animation:blink .25s steps(2) infinite alternate}
+#sounds .credit{margin:0;font-size:10px;line-height:1.4;color:var(--silk2)}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
 .kbbar .hint{margin-left:auto;min-width:0;white-space:normal;text-align:right;line-height:1.35;max-height:34px;overflow:hidden}
 .kbbar .hint.rec{color:#ff7a6e}
@@ -268,6 +271,7 @@ h5.silk{grid-column:1/-1}
 <body>
 <div id="stage"><div id="unit">
   <div id="confirm" hidden><div class="box"><div class="disp"><span id="cfTitle"></span></div><p id="cfText"></p><p>UNDO brings it back.</p><div class="row"><div class="k" id="cfNo">CANCEL</div><div class="k clr" id="cfYes"></div></div></div></div>
+  <div id="sounds" hidden><div class="box"><div class="disp"><span>SOUND</span><small id="sndTo"></small></div><div class="list" id="sndList"></div><p class="credit">Recordings: Salamander Grand Piano (Yamaha C5) by Alexander Holm, CC BY 3.0 · FluidR3 GM by Frank Wen, MIT. Each one downloads once, then works offline.</p><div class="row"><div class="k" id="sndX">DONE</div></div></div></div>
   <div id="presets" hidden><div class="box"><div class="disp"><span>PRESET BEATS</span><small id="preTo"></small></div><div class="list" id="preList"></div><div class="row"><div class="k" id="preX">CANCEL</div></div></div></div>
   <div id="entry" hidden><div class="box"><div class="disp"><div class="t"><span id="enName"></span><span id="enRange"></span></div><div class="v" id="enVal"></div></div><div id="enKeys"></div></div></div>
   <div class="screw" style="left:8px;top:8px"></div><div class="screw" style="right:8px;top:8px"></div><div class="screw" style="left:8px;bottom:8px"></div><div class="screw" style="right:8px;bottom:8px"></div>
@@ -500,6 +504,7 @@ function initAudio() {
   ctx.onstatechange = leds;
   if (ctx.state !== 'running') ctx.resume();
   leds();
+  MEL.forEach((m, j) => loadSound(soundOf(j)).catch(() => {}));   // recorded sounds the tracks already use
 }
 function env(param, t, peak, attack, decay) {
   param.setValueAtTime(0.0001, t);
@@ -582,18 +587,47 @@ const PATCHES = {
   lead: { osc: [['sawtooth', -8, 1, 0.35], ['sawtooth', 8, 1, 0.35], ['square', 0, 2, 0.1]], cut: 900, env: 2600, q: 3, fdec: 0.18, a: 0.008, d: 0.25, s: 0.6, r: 0.12, lvl: 0.42, gate: 0.9 },
   pad: { osc: [['sawtooth', -14, 1, 0.22], ['sawtooth', 14, 1, 0.22], ['sawtooth', -5, 0.5, 0.16], ['triangle', 0, 2, 0.12]], cut: 650, env: 900, q: 1, fdec: 0.9, a: 0.35, d: 1, s: 0.8, r: 0.7, lvl: 0.32, gate: 1 },
 };
-/* SOUND: each synth track can swap its synth for a piano, still made from oscillators. Pianos are built from
-   sine partials that ring and fade on their own (low notes ring longest, upper partials die first), slightly
-   stretched like real strings, with a felt hammer thump; harder touches are brighter. E.PIANO is a two-operator
-   FM tine. HONKY-TONK detunes three strings against each other like an old bar piano. */
-const SOUNDS = [['synth', 'SYNTH'], ['grand', 'GRAND'], ['upright', 'UPRIGHT'], ['epiano', 'E.PIANO'], ['honky', 'HONKY-TONK']];
+/* SOUND: each synth track can swap its synth for a recorded keyboard. The recordings (piano/<id>/<midi>.mp3,
+   one every 3 semitones from A0 to C8, see piano/LICENSES.md) download the first time a sound is picked and are
+   kept for offline use; each note plays the nearest recording, retuned. Until they arrive, the matching
+   oscillator piano below stands in. */
+const SOUNDS = [
+  { id: 'synth', name: 'SYNTH', key: 'SYNTH', sub: "this track's own synth" },
+  { id: 'c5grand', name: 'CONCERT GRAND', key: 'C5 GRAND', sub: 'Yamaha C5 grand · recorded', lvl: 1.2, alt: 'grand' },
+  { id: 'bright', name: 'BRIGHT GRAND', key: 'BRIGHT', sub: 'pop and stage grand · recorded', lvl: 4.6, alt: 'grand' },
+  { id: 'warm', name: 'WARM GRAND', key: 'WARM GRAND', sub: 'soft, round grand · recorded', lvl: 4.4, alt: 'grand' },
+  { id: 'honky', name: 'HONKY-TONK', key: 'HONKY-TONK', sub: 'C5 grand, strings out of tune', lvl: 1.7, alt: 'honky', from: 'c5grand', cents: [-14, 14] },
+  { id: 'cp', name: 'ELECTRIC GRAND', key: 'E.GRAND', sub: 'CP-70 style · recorded', lvl: 2.2, alt: 'upright' },
+  { id: 'tine', name: 'TINE E.PIANO', key: 'TINE EP', sub: 'Rhodes style · recorded', lvl: 1.6, alt: 'epiano' },
+  { id: 'fm', name: 'FM E.PIANO', key: 'FM EP', sub: 'DX7 style · recorded', lvl: 2.4, alt: 'epiano' },
+  { id: 'clav', name: 'CLAVINET', key: 'CLAVINET', sub: 'funk clav · recorded', lvl: 2.6, alt: 'honky' },
+  { id: 'harpsi', name: 'HARPSICHORD', key: 'HARPSI', sub: 'baroque · recorded', lvl: 2.2, alt: 'honky' },
+];
+const SAMPLE_NOTES = []; for (let m = 21; m <= 108; m += 3) SAMPLE_NOTES.push(m);
+const sampBufs = {}, sampLoading = {};
+// fetch and decode one sound's recordings; resolves when every note is ready
+function loadSound(id) {
+  const S = SOUNDS.find(x => x.id === id), dir = S && (S.from || S.id);
+  if (!S || id === 'synth' || !ctx) return Promise.resolve();
+  if (sampBufs[dir]) return Promise.resolve();
+  if (!sampLoading[dir]) {
+    const m = new Map();
+    sampLoading[dir] = Promise.all(SAMPLE_NOTES.map(n => fetch(`piano/${dir}/${n}.mp3`).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(b => new Promise((ok, no) => ctx.decodeAudioData(b, ok, no))).then(buf => m.set(n, buf))))
+      .then(() => { sampBufs[dir] = m; }, e => { delete sampLoading[dir]; throw e; });
+  }
+  return sampLoading[dir];
+}
+// oscillator pianos: the stand-in while a sound's recordings load
 const PIANOS = {
   grand: { n: 8, tilt: 1.3, B: 0.0004, t0: 5, cents: [-1, 1], ham: 0.35, bright: 1, lvl: 0.19 },
   upright: { n: 7, tilt: 1.05, B: 0.0008, t0: 2.8, cents: [-2.5, 2.5], ham: 0.55, bright: 1.35, lvl: 0.19 },
   honky: { n: 6, tilt: 0.95, B: 0.0009, t0: 2.6, cents: [-16, 1, 15], ham: 0.6, bright: 1.6, lvl: 0.18 },
   epiano: { fm: true, t0: 4, lvl: 0.2 },
 };
-const soundOf = j => (j >= 0 && state.mkit[j].snd) || 'synth';
+const OLD_SOUNDS = { grand: 'c5grand', upright: 'warm', epiano: 'tine' };   // the oscillator pianos of gl8-v15
+const soundOf = j => { const s = j >= 0 && state.mkit[j].snd; return (s && (OLD_SOUNDS[s] || s)) || 'synth'; };
+const soundInfo = j => SOUNDS.find(x => x.id === soundOf(j)) || SOUNDS[0];
 const voicesOn = new Set();
 // RELEASE (seconds) is how long a note takes to fade out after it ends or the key is let go
 const ECHO_TIMES = [['1/16', 0.25], ['1/8', 0.5], ['3/16', 0.75], ['1/4', 1]];
@@ -617,9 +651,14 @@ function curve(kind, amt) {
 const lastPitch = [null, null, null];
 const FX_PAGES = ['', 'ECHO', 'FUNK', 'SPACE'];   // GLIDE slides each track from the note it played last
 function playNote(kind, t, out, midi, v, dur) {
-  const j = MEL.findIndex(m => m.voice === kind), PN = PIANOS[soundOf(j)], f = 440 * Math.pow(2, (midi - 69) / 12);
-  // a piano has no sustain stage: its partials fade by themselves and the envelope only opens and damps
-  const P = PN ? { osc: [], a: 0.003, d: 1, s: 1, gate: 1, lvl: PN.lvl, q: 0.5, fdec: 0.35,
+  const j = MEL.findIndex(m => m.voice === kind), S = soundInfo(j), f = 440 * Math.pow(2, (midi - 69) / 12);
+  const bufs = S.id !== 'synth' && sampBufs[S.from || S.id];
+  if (S.id !== 'synth' && !bufs) loadSound(S.id).catch(() => {});
+  const PN = S.id !== 'synth' && !bufs ? PIANOS[S.alt] : null;
+  // pianos have no sustain stage: the sound fades by itself and the envelope only opens and damps.
+  // Recordings get a filter that closes on soft notes, so velocity changes the tone as well as the level
+  const P = bufs ? { osc: [], a: 0.002, d: 1, s: 1, gate: 1, lvl: S.lvl, q: 0.5, fdec: 0.3, cut: Math.min(900 + 15000 * v * v, 16000), env: 0 }
+    : PN ? { osc: [], a: 0.003, d: 1, s: 1, gate: 1, lvl: PN.lvl, q: 0.5, fdec: 0.35,
     cut: Math.min(f * 3 * (PN.bright || 1) + 400, 16000), env: Math.min(f * 10 * (PN.bright || 1) + 3000, 16000) } : PATCHES[kind];
   const rel = j < 0 ? P.r * 4.6 : fxOf(j).rel, tau = rel / 4.6;
   const fx = j < 0 ? FX_EXTRA : fxOf(j);
@@ -637,6 +676,16 @@ function playNote(kind, t, out, midi, v, dur) {
     o.detune.value = det; og.gain.value = lvl; o.connect(og).connect(mix); o.start(t); o.stop(off); return o;
   });
   if (PN) pianoTone(PN, t, f, v, from, gt, mix, off, oscs);
+  if (bufs) {
+    // the nearest recording, sped up or slowed to this pitch; GLIDE bends it in from the last note
+    const n = clamp(21 + 3 * Math.round((midi - 21) / 3), 21, 108), cents = S.cents || [0];
+    for (const c of cents) {
+      const src = ctx.createBufferSource(), sg = ctx.createGain();
+      src.buffer = bufs.get(n); src.playbackRate.value = Math.pow(2, (midi - n) / 12); src.detune.value = c;
+      if (from) { src.detune.setValueAtTime(c + 1200 * Math.log2(from / f), t); src.detune.linearRampToValueAtTime(c, t + gt); }
+      sg.gain.value = 1 / cents.length; src.connect(sg).connect(mix); src.start(t); src.stop(off); oscs.push(src);
+    }
+  }
   const extra = [];
   // ZAP: each note starts up to two octaves high and dives down like a laser
   if (fx.zap > 0) { const z = fx.zap / 100; for (const o of oscs) { const d0 = o.detune.value; o.detune.setValueAtTime(d0 + 2400 * z, t); o.detune.setTargetAtTime(d0, t, 0.015 + 0.07 * z); } }
@@ -1229,6 +1278,26 @@ function openPresets() {
   list.querySelectorAll('.k').forEach(k => press(k, () => loadPreset(+k.dataset.i)));
   $('presets').hidden = false;
 }
+function openSounds() {
+  takeShift(); if (entry) closeEntry(); kbAllUp();
+  const j = state.mode;
+  $('sndTo').textContent = 'FOR ' + MEL[j].name.toUpperCase();
+  const list = $('sndList');
+  list.innerHTML = SOUNDS.map(S => `<div class="k${S.id === soundOf(j) ? ' cur' : ''}" data-id="${S.id}">${S.name}<small>${S.sub}</small></div>`).join('');
+  list.querySelectorAll('.k').forEach(k => press(k, () => pickSound(k.dataset.id, k)));
+  $('sounds').hidden = false;
+}
+function closeSounds() { $('sounds').hidden = true; }
+function pickSound(id, el) {
+  const j = state.mode, S = SOUNDS.find(x => x.id === id);
+  state.mkit[j].snd = id; save(); refresh();
+  $('sndList').querySelectorAll('.k').forEach(k => k.classList.toggle('cur', k === el));
+  const chord = () => { const m = kbLow() + 12 * Math.floor(kbOcts() / 2); [0, 4, 7].forEach(d => playNote(MEL[j].voice, ctx.currentTime + 0.02, melGains[j], m + d, 0.75, 1.2)); };
+  if (id === 'synth' || sampBufs[S.from || S.id]) { chord(); return; }
+  el.classList.add('wait'); flash('LOADING ' + S.name);
+  loadSound(id).then(() => { el.classList.remove('wait'); flash(S.name + ' · ' + MEL[j].name.toUpperCase()); if (soundOf(j) === id) chord(); },
+    () => { el.classList.remove('wait'); flash('NO CONNECTION · TRY AGAIN'); });
+}
 function closePresets() { $('presets').hidden = true; }
 function loadPreset(i) {
   const P = PRESETS[i];
@@ -1426,7 +1495,7 @@ function buildKb() {
 }
 function renderKbBar() {
   const snd = soundOf(state.mode);
-  $('kbSnd').textContent = SOUNDS.find(x => x[0] === snd)[1]; $('kbSnd').classList.toggle('lit', snd !== 'synth');
+  $('kbSnd').textContent = soundInfo(state.mode).key; $('kbSnd').classList.toggle('lit', snd !== 'synth');
   $('kbIn').textContent = inKey() ? 'IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
   $('kbIn').classList.toggle('lit', inKey());
   const rec = liveRec && playing, h = $('kbHint');
@@ -1534,15 +1603,10 @@ function wireKb() {
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
   press($('kbDn'), () => { const mk = curMkit(); if (kbOct() > 0) { kbAllUp(); mk.oct = kbOct() - 1; rollOff = 0; save(); refresh(); } });
   press($('kbUp'), () => { const mk = curMkit(); if (kbOct() < kbMaxOct()) { kbAllUp(); mk.oct = kbOct() + 1; rollOff = 0; save(); refresh(); } });
-  // SOUND: each press moves this synth track to the next sound (SYNTH > GRAND > UPRIGHT > E.PIANO > HONKY-TONK) and plays it
-  press($('kbSnd'), () => {
-    const j = state.mode, mk = state.mkit[j], i = SOUNDS.findIndex(x => x[0] === soundOf(j));
-    mk.snd = SOUNDS[(i + 1) % SOUNDS.length][0];
-    flash(SOUNDS[(i + 1) % SOUNDS.length][1] + ' · ' + MEL[j].name.toUpperCase());
-    const m = kbLow() + 12 * Math.floor(kbOcts() / 2);
-    [0, 4, 7].forEach(d => playNote(MEL[j].voice, ctx.currentTime + 0.01, melGains[j], m + d, 0.7, 0.9));
-    save(); refresh();
-  });
+  // SOUND opens a list of this synth track's sounds; picking one loads its recordings and plays a chord
+  press($('kbSnd'), openSounds);
+  press($('sndX'), closeSounds);
+  $('sounds').addEventListener('pointerdown', e => { if (e.target.id === 'sounds') { e.preventDefault(); closeSounds(); } });
   // EXPAND: the keys (or drum pads) take over the screen and knob area until it is pressed again
   const big = () => { kbAllUp(); state.kbBig = !state.kbBig; save(); refresh(); };
   press($('kbBig'), big); press($('dkBig'), big);
