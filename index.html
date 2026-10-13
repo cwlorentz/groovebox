@@ -134,10 +134,10 @@ h5.silk{grid-column:1/-1}
 #unit.keys .kbbar{display:flex}
 #unit.keys .kb{display:block}
 .kbbar{align-items:center;gap:10px;height:34px}
-.kbbar .k{height:34px;padding:0 14px;font-size:11px}
+.kbbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
 .kbbar .k.in{min-width:150px}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
-.kbbar .hint{margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+.kbbar .hint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .kbbar .hint.rec{color:#ff7a6e}
 .kb{position:relative;height:198px;border-radius:6px;background:#141416;box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
 .kb::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;z-index:3;background:linear-gradient(#5a1d18,#3a1310);box-shadow:0 1px 3px #000a;pointer-events:none}
@@ -178,7 +178,9 @@ h5.silk{grid-column:1/-1}
 #unit.tall .trigs{flex:1;grid-template-columns:repeat(8,1fr);grid-auto-rows:1fr;gap:12px 9px}
 #unit.tall .tg .key{height:auto;flex:1;min-height:80px}
 #unit.tall .kb{height:auto;flex:1;min-height:180px}
-#unit.tall .kbbar .k.in{min-width:120px}
+#unit.tall .kbbar .k.in{min-width:0}
+#unit.tall .kbbar{gap:8px}
+#unit.tall .kbbar #kbRange{min-width:80px}
 /* power-on screen: the first tap unlocks audio and goes full screen */
 #power{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:#0e0e10e6;cursor:pointer}
 #power[hidden]{display:none}
@@ -224,7 +226,7 @@ h5.silk{grid-column:1/-1}
     <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><span class="silk hint" id="kbHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="silk hint" id="kbHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kb" id="kb"></div>
     </div>
@@ -378,6 +380,7 @@ function undo(redo) {
 
 /* ---------------- audio engine (voices from the main Grid Looper, plus tune and decay) ---------------- */
 let ctx = null, masterGain, masterComp, lowpass, noiseBuf, trackGains = [], trackPans = [], melGains = [], openHat = null;
+let echoDelay, echoSends = [], verbSends = [];
 function initAudio() {
   if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -396,6 +399,21 @@ function initAudio() {
     g.connect(p); p.connect(lowpass); trackGains.push(g); trackPans.push(p);
   });
   melGains = MEL.map(() => { const g = ctx.createGain(); g.connect(lowpass); return g; });
+  // synth effects: each Bass/Lead/Pad track sends (after its volume) to one shared echo and one reverb
+  echoDelay = ctx.createDelay(2);
+  const fb = ctx.createGain(), dark = filt('lowpass', 3200, 0.5), echoOut = ctx.createGain();
+  fb.gain.value = 0.42; echoOut.gain.value = 0.8;
+  echoDelay.connect(dark); dark.connect(fb); fb.connect(echoDelay); dark.connect(echoOut); echoOut.connect(lowpass);
+  const verb = ctx.createConvolver(), len = Math.round(ctx.sampleRate * 2.8), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const ch = ir.getChannelData(c); for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+  verb.buffer = ir;
+  const verbIn = filt('highpass', 220, 0.7), verbOut = ctx.createGain(); verbOut.gain.value = 0.9;
+  verbIn.connect(verb); verb.connect(verbOut); verbOut.connect(lowpass);
+  MEL.forEach((m, j) => {
+    const e = ctx.createGain(), r = ctx.createGain(); e.gain.value = 0; r.gain.value = 0;
+    melGains[j].connect(e); e.connect(echoDelay); melGains[j].connect(r); r.connect(verbIn);
+    echoSends.push(e); verbSends.push(r);
+  });
   applyMix(true);
   ctx.onstatechange = leds;
   if (ctx.state !== 'running') ctx.resume();
@@ -483,10 +501,15 @@ const PATCHES = {
   pad: { osc: [['sawtooth', -14, 1, 0.22], ['sawtooth', 14, 1, 0.22], ['sawtooth', -5, 0.5, 0.16], ['triangle', 0, 2, 0.12]], cut: 650, env: 900, q: 1, fdec: 0.9, a: 0.35, d: 1, s: 0.8, r: 0.7, lvl: 0.32, gate: 1 },
 };
 const voicesOn = new Set();
+// RELEASE (seconds) is how long a note takes to fade out after it ends or the key is let go
+const ECHO_TIMES = [['1/16', 0.25], ['1/8', 0.5], ['3/16', 0.75], ['1/4', 1]];
+const FX_DEFAULT = [{ echo: 0, verb: 0, rel: 0.4 }, { echo: 0, verb: 0, rel: 0.9 }, { echo: 0, verb: 0, rel: 3.2 }];
+const fxOf = j => { const k = state.mkit[j]; if (!k.fx) k.fx = Object.assign({}, FX_DEFAULT[j]); return k.fx; };
 function playNote(kind, t, out, midi, v, dur) {
   const P = PATCHES[kind], f = 440 * Math.pow(2, (midi - 69) / 12);
+  const j = MEL.findIndex(m => m.voice === kind), rel = j < 0 ? P.r * 4.6 : fxOf(j).rel, tau = rel / 4.6;
   const lp = filt('lowpass', P.cut, P.q), g = ctx.createGain();
-  const end = Math.max(t + dur * P.gate, t + P.a + 0.01), off = end + P.r * 6;
+  const end = Math.max(t + dur * P.gate, t + P.a + 0.01), off = end + rel * 1.3 + 0.05;
   const oscs = P.osc.map(([type, det, mult, lvl]) => {
     const o = osc(type, f * mult), og = ctx.createGain();
     o.detune.value = det; og.gain.value = lvl; o.connect(og).connect(lp); o.start(t); o.stop(off); return o;
@@ -495,9 +518,9 @@ function playNote(kind, t, out, midi, v, dur) {
   lp.frequency.setTargetAtTime(P.cut, t, P.fdec);
   const pk = P.lvl * (0.2 + 0.8 * v);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + P.a);
-  g.gain.setTargetAtTime(pk * P.s, t + P.a, P.d); g.gain.setTargetAtTime(0, end, P.r);
+  g.gain.setTargetAtTime(pk * P.s, t + P.a, P.d); g.gain.setTargetAtTime(0, end, tau);
   lp.connect(g).connect(out);
-  const vo = { g, oscs, P }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
+  const vo = { g, oscs, rel }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
   return vo;
 }
 // let go of a note started with a long `dur` (the on-screen keyboard holds notes while a finger is down)
@@ -505,8 +528,8 @@ function releaseNote(vo) {
   if (!vo || !voicesOn.has(vo)) return;
   const t = ctx.currentTime, gn = vo.g.gain;
   if (gn.cancelAndHoldAtTime) gn.cancelAndHoldAtTime(t); else { gn.cancelScheduledValues(t); gn.setValueAtTime(gn.value, t); }
-  gn.setTargetAtTime(0, t, vo.P.r);
-  for (const o of vo.oscs) { try { o.stop(t + vo.P.r * 6 + 0.05); } catch (e) {} }
+  gn.setTargetAtTime(0, t, vo.rel / 4.6);
+  for (const o of vo.oscs) { try { o.stop(t + vo.rel * 1.3 + 0.05); } catch (e) {} }
 }
 function silenceNotes() {
   if (!ctx) return;
@@ -539,7 +562,11 @@ function applyMix(now) {
   if (!ctx) return;
   const set = (param, v) => { if (now) param.value = v; else param.setTargetAtTime(v, ctx.currentTime, 0.015); };
   state.kit.forEach((k, i) => { set(trackGains[i].gain, isOn(k) ? k.vol * k.vol : 0); if (trackPans[i].pan) set(trackPans[i].pan, k.pan); });
-  state.mkit.forEach((k, j) => set(melGains[j].gain, isOn(k) ? k.vol * k.vol : 0));
+  state.mkit.forEach((k, j) => {
+    set(melGains[j].gain, isOn(k) ? k.vol * k.vol : 0);
+    const fx = fxOf(j); set(echoSends[j].gain, Math.pow(fx.echo / 100, 1.5)); set(verbSends[j].gain, 1.6 * Math.pow(fx.verb / 100, 1.5));
+  });
+  set(echoDelay.delayTime, 60 / state.bpm * ECHO_TIMES[state.echoTime == null ? 2 : state.echoTime][1]);
   set(masterGain.gain, Math.pow(state.master / 100, 2));
   set(lowpass.frequency, 120 * Math.pow(18000 / 120, state.cutoff));
 }
@@ -865,6 +892,16 @@ function page() {
     typed(param('FILTER', () => state.cutoff, v => { state.cutoff = v; applyMix(); }, 0, 1, v => { const f = 120 * Math.pow(150, v); return f >= 1000 ? (f / 1000).toFixed(1) + 'k' : f.toFixed(0); }, 0.01),
       { unit: 'Hz', umin: 120, umax: 18000, toUser: v => Math.round(120 * Math.pow(150, v)), fromUser: f => Math.log(f / 120) / Math.log(150) }),
   ];
+  if (fxMode && isMel()) {
+    const fx = fxOf(state.mode), pct = v => v + '%';
+    return top.concat([
+      param('ECHO', () => fx.echo, v => { fx.echo = v; applyMix(); }, 0, 100, pct),
+      typed(param('TIME', () => state.echoTime == null ? 2 : state.echoTime, v => { state.echoTime = v; applyMix(); }, 0, ECHO_TIMES.length - 1, v => ECHO_TIMES[v][0]),
+        { opts: ECHO_TIMES.map((e, i) => [e[0], i]) }),
+      param('REVERB', () => fx.verb, v => { fx.verb = v; applyMix(); }, 0, 100, pct),
+      typed(param('RELEASE', () => fx.rel, v => { fx.rel = v; }, 0.05, 4, v => v.toFixed(v < 1 ? 2 : 1) + 's', 0.05), { unit: 's' }),
+    ]);
+  }
   if (scaleMode) {
     return top.concat([
       typed(param('KEY', () => state.key.root, v => { state.key.root = v; }, 0, 11, v => NOTE_NAMES[v]), { opts: NOTE_NAMES.map((n, i) => [n, i]) }),
@@ -891,7 +928,7 @@ function page() {
     param('OCT', () => mk.oct, v => { mk.oct = v; rollOff = 0; }, 0, 7, v => '' + v),
   ]);
 }
-let scaleMode = false, selNote = null, lastLen = 1;
+let scaleMode = false, fxMode = false, selNote = null, lastLen = 1;
 function buildKnobs() {
   const enc = $('enc');
   for (let i = 0; i < 8; i++) {
@@ -910,7 +947,7 @@ function buildKnobs() {
       ev.preventDefault(); initAudio();
       const p = page()[i]; if (p.off) return;
       if (ev.target.closest('.val')) { openEntry(i); return; }
-      if (i >= 4 && !scaleMode && isMel() && p.name !== 'OCT' && selNote) remember();
+      if (i >= 4 && !scaleMode && !fxMode && isMel() && p.name !== 'OCT' && selNote) remember();
       e.setPointerCapture(ev.pointerId);
       drag = { x: ev.clientX, y: ev.clientY, v: p.get(), id: ev.pointerId };
     });
@@ -1200,6 +1237,8 @@ function wireKb() {
     else { state.key.scale = state.prevScale && state.prevScale !== 'Chromatic' ? state.prevScale : 'Major'; flash('IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase()); }
     rollOff = 0; save(); refresh();
   });
+  // FX turns the lower four knobs into ECHO, TIME, REVERB and RELEASE for this synth track
+  press($('kbFx'), () => { fxMode = !fxMode; scaleMode = false; if (fxMode) flash('FX · ' + MEL[state.mode].name.toUpperCase()); refresh(); });
   press($('kKeys'), () => {
     takeShift(); state.keysOn = !state.keysOn;
     if (state.keysOn && !isMel()) { state.mode = lastMel; selNote = null; curNoteR = null; rollOff = 0; }
@@ -1220,7 +1259,7 @@ let clip = null;
 function wire() {
   press($('kFunc'), () => { shift = !shift; $('kFunc').classList.toggle('lit', shift); });
   press($('kMidi'), () => { takeShift(); toggleMidi(); });
-  press($('kScale'), () => { takeShift(); scaleMode = !scaleMode; refresh(); });
+  press($('kScale'), () => { takeShift(); scaleMode = !scaleMode; fxMode = false; refresh(); });
   let taps = [];
   press($('kTap'), () => {
     takeShift();
@@ -1280,6 +1319,8 @@ function refresh() {
   const mel = isMel();
   document.querySelectorAll('[data-mode]').forEach(k => k.classList.toggle('lit', String(state.mode) === k.dataset.mode));
   $('kScale').classList.toggle('lit', scaleMode);
+  $('kbFx').classList.toggle('lit', fxMode);
+  applyMix();
   $('kMidi').classList.toggle('lit', midiOn);
   $('kPlay').classList.toggle('litg', playing);
   $('kRec').classList.toggle('litr', liveRec);
