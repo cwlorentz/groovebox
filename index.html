@@ -144,9 +144,9 @@ h5.silk{grid-column:1/-1}
 .kbbar{align-items:center;gap:10px;height:34px}
 .kbbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
 .kbbar .k.in{min-width:150px}
-.kbbar #kbFx{min-width:110px}
+.kbbar #kbFx{min-width:80px}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
-.kbbar .hint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.kbbar .hint{margin-left:auto;min-width:0;white-space:normal;text-align:right;line-height:1.35;max-height:34px;overflow:hidden}
 .kbbar .hint.rec{color:#ff7a6e}
 .kb{position:relative;height:198px;border-radius:6px;background:#141416;box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
 .kb::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;z-index:3;background:linear-gradient(#5a1d18,#3a1310);box-shadow:0 1px 3px #000a;pointer-events:none}
@@ -173,7 +173,7 @@ h5.silk{grid-column:1/-1}
 .dkbar{align-items:center;gap:10px;height:34px}
 .dkbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
 .dkbar .k.in{min-width:170px}
-.dkbar .hint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dkbar .hint{margin-left:auto;min-width:0;white-space:normal;text-align:right;line-height:1.35;max-height:34px;overflow:hidden}
 .dkbar .hint.rec{color:#ff7a6e}
 .dk{position:relative;height:198px;border-radius:6px;background:radial-gradient(120% 140% at 50% 0%,#1d1e21,#121214);box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
 .dk .pd{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;
@@ -263,8 +263,8 @@ h5.silk{grid-column:1/-1}
     <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
-      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><div class="k clr">CLEAR</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
+      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><div class="k clr">CLEAR</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kb" id="kb"></div>
       <div class="dk" id="dk"></div>
@@ -1331,7 +1331,7 @@ function renderKbBar() {
   $('kbIn').classList.toggle('lit', inKey());
   const rec = liveRec && playing, h = $('kbHint');
   h.classList.toggle('rec', liveRec);
-  h.textContent = rec ? '● Recording · notes snap to the 16 steps' : liveRec ? '● Step rec · hold keys together for a chord' : 'Lower on a key = louder · ● REC + ▶ to record';
+  h.textContent = rec ? '● Recording · notes snap to steps' : liveRec ? '● Step rec · hold keys for a chord' : 'Lower on a key = louder';
 }
 const kbKeyAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#kb [data-m]') : null; };
 function kbDown(id, el, e) {
@@ -1485,7 +1485,7 @@ function renderDrumPads() {
   vb.textContent = fixed ? 'VELOCITY: FIXED' : 'VELOCITY: BY TAP'; vb.classList.toggle('lit', !fixed);
   const rec = liveRec && playing, h = $('dkHint');
   h.classList.toggle('rec', liveRec);
-  h.textContent = rec ? '● Recording · hits snap to the 16 steps' : liveRec ? '● Step rec · pads hit together share a step' : (fixed ? 'Every hit at full level' : 'Centre of a pad = louder') + ' · ● REC + ▶ to record';
+  h.textContent = rec ? '● Recording · hits snap to steps' : liveRec ? '● Step rec · pads hit together share a step' : (fixed ? 'Every hit at full level' : 'Centre of a pad = louder');
 }
 function wireDrumPads() {
   press($('dkVel'), () => { state.padVel = state.padVel === 'fixed' ? 'tap' : 'fixed'; save(); renderDrumPads(); });
@@ -1540,6 +1540,13 @@ function wire() {
     liveRec = !liveRec; take = false; stepReset(); stepCur = 0;
     flash(!liveRec ? 'REC OFF' : playing ? 'LIVE REC: TAP KEYS' : 'STEP REC: STEP 1'); refresh();
   });
+  // CLEAR beside the keyboard / pads: empties the synth track, or the selected drum (UNDO brings it back)
+  document.querySelectorAll('.clr').forEach(k => press(k, () => {
+    remember();
+    if (isMel()) { curMel().notes = []; flash('CLEARED ' + MEL[state.mode].name.toUpperCase()); }
+    else { pat().drums[state.sel].fill(false); flash('CLEARED ' + TRACKS[state.sel].short); }
+    selNote = null; save(); refresh();
+  }));
   document.querySelectorAll('.sc [data-st]').forEach(k => press(k, () => {
     const by = +k.dataset.st; stepMove(by, by ? null : 0); flash('STEP ' + (stepCur + 1));
   }));
