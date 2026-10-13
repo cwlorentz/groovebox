@@ -136,6 +136,7 @@ h5.silk{grid-column:1/-1}
 .kbbar{align-items:center;gap:10px;height:34px}
 .kbbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
 .kbbar .k.in{min-width:150px}
+.kbbar #kbFx{min-width:110px}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
 .kbbar .hint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .kbbar .hint.rec{color:#ff7a6e}
@@ -156,6 +157,31 @@ h5.silk{grid-column:1/-1}
 .kb .w.on{background:linear-gradient(#ff9a3c,#ffb26b 70%,#e86d0c);box-shadow:inset 0 -3px 0 #c45a08,0 0 22px #ff8a1f88}
 .kb .b.on{background:linear-gradient(#e86d0c,#ff9a3c 85%,#c45a08);box-shadow:inset 0 -2px 0 #a04a06,0 0 18px #ff8a1f99}
 .kb .on span{color:#4a2306}
+/* PADS: on the Drum page the same KEYS key swaps the trig keys for 8 round drum pads laid out like a kit */
+.dkbar,.dk{display:none}
+#unit.pads .bars,#unit.pads .trigs{display:none}
+#unit.pads .dkbar{display:flex}
+#unit.pads .dk{display:block}
+.dkbar{align-items:center;gap:10px;height:34px}
+.dkbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
+.dkbar .k.in{min-width:170px}
+.dkbar .hint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dkbar .hint.rec{color:#ff7a6e}
+.dk{position:relative;height:198px;border-radius:6px;background:radial-gradient(120% 140% at 50% 0%,#1d1e21,#121214);box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
+.dk .pd{position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;
+  background:radial-gradient(circle at 50% 38%,#3d3e44,#2a2b30 58%,#1f2024 100%);
+  box-shadow:0 0 0 3px #0f0f11,0 0 0 5px #3a3b40,0 4px 8px #000b,inset 0 2px 0 #ffffff14,inset 0 -6px 12px #0007;color:#a9a7a0;transition:background .25s,box-shadow .25s,color .25s}
+.dk .pd::before{content:"";position:absolute;inset:22%;border-radius:50%;border:1px dashed #ffffff12;pointer-events:none}
+.dk .pd svg{width:38%;height:38%;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;margin-top:6%;pointer-events:none}
+.dk .pd b{font-size:10px;font-weight:700;letter-spacing:.12em;color:#8d8b84;pointer-events:none}
+.dk .pd i{position:absolute;top:9%;width:7px;height:7px;border-radius:50%;background:#1a1a1c;box-shadow:inset 0 1px 2px #000}
+.dk .pd i.o{background:var(--org);box-shadow:0 0 6px 1px #ff8a1f99}
+.dk .pd.sel{box-shadow:0 0 0 3px #0f0f11,0 0 0 5px #ff8a1f99,0 4px 8px #000b,inset 0 2px 0 #ffffff14,inset 0 -6px 12px #0007}
+.dk .pd.mute{opacity:.4}
+.dk .pd.hit{transition:none;background:radial-gradient(circle at var(--hx,50%) var(--hy,50%),#fff1e2 0,#ffb26b 22%,#ff8a1f 52%,#d9620a 100%);
+  box-shadow:0 0 0 3px #0f0f11,0 0 0 5px #ffb26b,0 0 34px 6px #ff8a1f88,inset 0 -6px 12px #a04a0688;color:#4a2306}
+.dk .pd.hit b{color:#5a2a06}
+.dk .pd.hit::before{border-color:#4a230633}
 /* tall layout: the same panel restacked for phones and tablets held upright.
    fit() switches to it whenever it makes the controls bigger than the wide panel would. */
 #unit.tall{width:760px;grid-template-columns:repeat(8,1fr);grid-template-rows:34px minmax(250px,3fr) auto auto auto auto minmax(220px,2fr);gap:14px 10px}
@@ -177,7 +203,8 @@ h5.silk{grid-column:1/-1}
 #unit.tall .bars{display:none}
 #unit.tall .trigs{flex:1;grid-template-columns:repeat(8,1fr);grid-auto-rows:1fr;gap:12px 9px}
 #unit.tall .tg .key{height:auto;flex:1;min-height:80px}
-#unit.tall .kb{height:auto;flex:1;min-height:180px}
+#unit.tall .kb,#unit.tall .dk{height:auto;flex:1;min-height:180px}
+#unit.tall .dkbar .k.in{min-width:0}
 #unit.tall .kbbar .k.in{min-width:0}
 #unit.tall .kbbar{gap:8px}
 #unit.tall .kbbar #kbRange{min-width:80px}
@@ -227,8 +254,10 @@ h5.silk{grid-column:1/-1}
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
       <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="silk hint" id="kbHint"></span></div>
+      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kb" id="kb"></div>
+      <div class="dk" id="dk"></div>
     </div>
   </div>
 </div>
@@ -503,23 +532,76 @@ const PATCHES = {
 const voicesOn = new Set();
 // RELEASE (seconds) is how long a note takes to fade out after it ends or the key is let go
 const ECHO_TIMES = [['1/16', 0.25], ['1/8', 0.5], ['3/16', 0.75], ['1/4', 1]];
-const FX_DEFAULT = [{ echo: 0, verb: 0, rel: 0.4 }, { echo: 0, verb: 0, rel: 0.9 }, { echo: 0, verb: 0, rel: 3.2 }];
-const fxOf = j => { const k = state.mkit[j]; if (!k.fx) k.fx = Object.assign({}, FX_DEFAULT[j]); return k.fx; };
+// FUNK and SPACE effects (0-100, all off to start): WAH, DRIVE, SUB, GLIDE and WOBBLE, RING, ZAP, CRUSH
+const FX_EXTRA = { wah: 0, drive: 0, sub: 0, glide: 0, wob: 0, ring: 0, zap: 0, crush: 0 };
+const FX_DEFAULT = [{ echo: 0, verb: 0, rel: 0.4 }, { echo: 0, verb: 0, rel: 0.9 }, { echo: 0, verb: 0, rel: 3.2 }].map(f => Object.assign(f, FX_EXTRA));
+const fxOf = j => {
+  const k = state.mkit[j]; if (!k.fx) k.fx = Object.assign({}, FX_DEFAULT[j]);
+  if (k.fx.wah == null) Object.assign(k.fx, FX_EXTRA, k.fx);   // saved before FUNK and SPACE existed
+  return k.fx;
+};
+// waveshaper curves, made once per setting: DRIVE soft-clips, CRUSH rounds the wave to a few levels
+const curves = new Map();
+function curve(kind, amt) {
+  const key = kind + Math.round(amt); if (curves.has(key)) return curves.get(key);
+  const n = 2048, c = new Float32Array(n);
+  if (kind === 'drive') { const k = 1 + amt * 0.4; for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); } }
+  else { const lv = Math.pow(2, 8 - 6 * amt / 100) / 2; for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.round(x * lv) / lv; } }
+  curves.set(key, c); return c;
+}
+const lastPitch = [null, null, null];
+const FX_PAGES = ['', 'ECHO', 'FUNK', 'SPACE'];   // GLIDE slides each track from the note it played last
 function playNote(kind, t, out, midi, v, dur) {
   const P = PATCHES[kind], f = 440 * Math.pow(2, (midi - 69) / 12);
   const j = MEL.findIndex(m => m.voice === kind), rel = j < 0 ? P.r * 4.6 : fxOf(j).rel, tau = rel / 4.6;
-  const lp = filt('lowpass', P.cut, P.q), g = ctx.createGain();
+  const fx = j < 0 ? FX_EXTRA : fxOf(j);
+  const lp = filt('lowpass', P.cut, P.q), g = ctx.createGain(), mix = ctx.createGain();
   const end = Math.max(t + dur * P.gate, t + P.a + 0.01), off = end + rel * 1.3 + 0.05;
-  const oscs = P.osc.map(([type, det, mult, lvl]) => {
+  // GLIDE: start from the last note this track played and slide up or down to this one
+  const from = j >= 0 && fx.glide > 0 && lastPitch[j] != null && lastPitch[j] !== midi ? 440 * Math.pow(2, (lastPitch[j] - 69) / 12) : 0;
+  const gt = 0.02 + 0.5 * Math.pow(fx.glide / 100, 1.5);
+  if (j >= 0) lastPitch[j] = midi;
+  const parts = P.osc.slice();
+  if (fx.sub > 0) parts.push(['square', 0, 0.5, 0.35 * fx.sub / 100]);   // SUB: a square an octave down
+  const oscs = parts.map(([type, det, mult, lvl]) => {
     const o = osc(type, f * mult), og = ctx.createGain();
-    o.detune.value = det; og.gain.value = lvl; o.connect(og).connect(lp); o.start(t); o.stop(off); return o;
+    if (from) { o.frequency.setValueAtTime(from * mult, t); o.frequency.exponentialRampToValueAtTime(f * mult, t + gt); }
+    o.detune.value = det; og.gain.value = lvl; o.connect(og).connect(mix); o.start(t); o.stop(off); return o;
   });
+  const extra = [];
+  // ZAP: each note starts up to two octaves high and dives down like a laser
+  if (fx.zap > 0) { const z = fx.zap / 100; for (const o of oscs) { const d0 = o.detune.value; o.detune.setValueAtTime(d0 + 2400 * z, t); o.detune.setTargetAtTime(d0, t, 0.015 + 0.07 * z); } }
+  // WOBBLE: a vibrato that gets deeper and faster as it goes up, from a gentle warble to a flying saucer
+  if (fx.wob > 0) {
+    const w = fx.wob / 100, lfo = osc('sine', 3 + 9 * w), lg = ctx.createGain();
+    lg.gain.value = 10 + 340 * w * w; lfo.connect(lg); for (const o of oscs) lg.connect(o.detune);
+    lfo.start(t); lfo.stop(off); extra.push(lfo);
+  }
+  let node = mix;
+  const chain = n => { node.connect(n); node = n; };
+  if (fx.drive > 0) { const ws = ctx.createWaveShaper(), pre = ctx.createGain(); pre.gain.value = 1 + fx.drive / 25; ws.curve = curve('drive', fx.drive); ws.oversample = '2x'; chain(pre); chain(ws); }
+  chain(lp);
+  // WAH: a resonant peak that sweeps up on every note and closes again, the funk guitar "wow"
+  if (fx.wah > 0) {
+    const a = fx.wah / 100, wf = filt('peaking', 350, 3 + 5 * a); wf.gain.value = 6 + 14 * a;
+    wf.frequency.setValueAtTime(350, t); wf.frequency.linearRampToValueAtTime(600 + 2600 * a, t + 0.05 + 0.04 * a);
+    wf.frequency.setTargetAtTime(380, t + 0.09 + 0.04 * a, 0.12 + 0.25 * a); chain(wf);
+  }
+  if (fx.crush > 0) { const ws = ctx.createWaveShaper(); ws.curve = curve('crush', fx.crush); chain(ws); }
+  // RING: ring modulation by an off-key sine for metallic, alien tones (mixed with the dry sound)
+  if (fx.ring > 0) {
+    const r = fx.ring / 100, rm = ctx.createGain(), car = osc('sine', f * 1.73), dry = ctx.createGain(), wet = ctx.createGain(), sum = ctx.createGain();
+    rm.gain.value = 0; car.connect(rm.gain); car.start(t); car.stop(off); extra.push(car);
+    dry.gain.value = 1 - 0.8 * r; wet.gain.value = 1.4 * r;
+    node.connect(dry).connect(sum); node.connect(rm).connect(wet).connect(sum); node = sum;
+  }
   lp.frequency.setValueAtTime(Math.min(P.cut + P.env * (0.4 + 0.6 * v), 16000), t);
   lp.frequency.setTargetAtTime(P.cut, t, P.fdec);
-  const pk = P.lvl * (0.2 + 0.8 * v);
+  const pk = P.lvl * (0.2 + 0.8 * v) / (1 + fx.drive / 120);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + P.a);
   g.gain.setTargetAtTime(pk * P.s, t + P.a, P.d); g.gain.setTargetAtTime(0, end, tau);
-  lp.connect(g).connect(out);
+  node.connect(g).connect(out);
+  oscs.push(...extra);
   const vo = { g, oscs, rel }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
   return vo;
 }
@@ -714,7 +796,7 @@ function fit() {
   unit.style.height = tall ? tallH + 'px' : '';
   const k = (tall ? kTall : kWide) * 0.995;
   unit.style.transform = `scale(${k}) translate(-50%,-50%)`;
-  scaleK = k; sizeOled();
+  scaleK = k; sizeOled(); layoutPads();
 }
 let scaleK = 1;
 addEventListener('resize', fit);
@@ -893,7 +975,9 @@ function page() {
       { unit: 'Hz', umin: 120, umax: 18000, toUser: v => Math.round(120 * Math.pow(150, v)), fromUser: f => Math.log(f / 120) / Math.log(150) }),
   ];
   if (fxMode && isMel()) {
-    const fx = fxOf(state.mode), pct = v => v + '%';
+    const fx = fxOf(state.mode), pct = v => v + '%', amt = (name, k) => param(name, () => fx[k], v => { fx[k] = v; }, 0, 100, v => v ? v + '%' : 'OFF');
+    if (fxMode === 2) return top.concat([amt('WAH', 'wah'), amt('DRIVE', 'drive'), amt('SUB', 'sub'), amt('GLIDE', 'glide')]);
+    if (fxMode === 3) return top.concat([amt('WOBBLE', 'wob'), amt('RING', 'ring'), amt('ZAP', 'zap'), amt('CRUSH', 'crush')]);
     return top.concat([
       param('ECHO', () => fx.echo, v => { fx.echo = v; applyMix(); }, 0, 100, pct),
       typed(param('TIME', () => state.echoTime == null ? 2 : state.echoTime, v => { state.echoTime = v; applyMix(); }, 0, ECHO_TIMES.length - 1, v => ECHO_TIMES[v][0]),
@@ -928,7 +1012,7 @@ function page() {
     param('OCT', () => mk.oct, v => { mk.oct = v; rollOff = 0; }, 0, 7, v => '' + v),
   ]);
 }
-let scaleMode = false, fxMode = false, selNote = null, lastLen = 1;
+let scaleMode = false, fxMode = 0, selNote = null, lastLen = 1;
 function buildKnobs() {
   const enc = $('enc');
   for (let i = 0; i < 8; i++) {
@@ -1237,12 +1321,13 @@ function wireKb() {
     else { state.key.scale = state.prevScale && state.prevScale !== 'Chromatic' ? state.prevScale : 'Major'; flash('IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase()); }
     rollOff = 0; save(); refresh();
   });
-  // FX turns the lower four knobs into ECHO, TIME, REVERB and RELEASE for this synth track
-  press($('kbFx'), () => { fxMode = !fxMode; scaleMode = false; if (fxMode) flash('FX · ' + MEL[state.mode].name.toUpperCase()); refresh(); });
+  // FX turns the lower four knobs into effects for this synth track; each press moves to the next set, then off:
+  // ECHO (echo, time, reverb, release) > FUNK (wah, drive, sub, glide) > SPACE (wobble, ring, zap, crush)
+  press($('kbFx'), () => { fxMode = (fxMode + 1) % 4; scaleMode = false; if (fxMode) flash(FX_PAGES[fxMode] + ' · ' + MEL[state.mode].name.toUpperCase()); refresh(); });
+  // KEYS shows the piano on the synth pages and the drum pads on the Drum page
   press($('kKeys'), () => {
     takeShift(); state.keysOn = !state.keysOn;
-    if (state.keysOn && !isMel()) { state.mode = lastMel; selNote = null; curNoteR = null; rollOff = 0; }
-    if (state.keysOn) flash('KEYS · ' + MEL[state.mode].name.toUpperCase());
+    if (state.keysOn) flash(isMel() ? 'KEYS · ' + MEL[state.mode].name.toUpperCase() : 'DRUM PADS');
     save(); refresh();
   });
 }
@@ -1254,12 +1339,89 @@ function kbFrame(now) {
   }
 }
 
+/* ---------------- PADS: round drum pads for the Drum page ----------------
+   One pad per drum track, set out like a kit seen from the stool. A tap plays the drum at once and selects
+   its track; with VELOCITY: BY TAP, the centre of a pad is loudest and the rim softest. With REC lit and the
+   loop playing, each hit is written on the nearest of the 16 steps (one undo per take). */
+const PAD_ICONS = {
+  kick: '<circle cx="20" cy="20" r="15"/><circle cx="20" cy="20" r="6.5"/><path d="M20 5v3M20 32v3M5 20h3M32 20h3M9.4 9.4l2 2M28.6 28.6l-2-2M30.6 9.4l-2 2M9.4 30.6l2-2"/>',
+  snare: '<ellipse cx="20" cy="20" rx="13" ry="4"/><path d="M7 20v9c0 2.2 5.8 4 13 4s13-1.8 13-4v-9"/><path d="M10 25l3 4 3-4 3 4 3-4 3 4 3-4 3 4" stroke-width="1.4"/><path d="M9 4l14 13M31 4L17 17"/>',
+  clap: '<path d="M14 33c-4-3-6-8-6-13l2-9c.5-2 3-2 3.5 0l1 5M14 33l5-5 1-10c.2-2-2.6-2.6-3.2-.6l-1.3 4.6"/><path d="M26 33c4-3 6-8 6-13l-2-9c-.5-2-3-2-3.5 0l-1 5M26 33l-5-5-1-10c-.2-2 2.6-2.6 3.2-.6l1.3 4.6"/><path d="M20 3v4M13 5l1.6 3M27 5l-1.6 3" stroke-width="1.6"/>',
+  chh: '<path d="M6 17c4-3 24-3 28 0M6 19.5c4 3 24 3 28 0"/><path d="M20 21.5V36M14 36h12"/><circle cx="20" cy="14.6" r="1.4"/>',
+  ohh: '<path d="M6 13c4-3 24-3 28 0M6 21c4 3 24 3 28 0"/><path d="M20 23V36M14 36h12M20 13.6V10"/><path d="M3 16.5l3 .5M37 16.5l-3 .5M2.5 20l3-.3M37.5 20l-3-.3" stroke-width="1.5"/>',
+  ltom: '<ellipse cx="20" cy="11" rx="14" ry="4.5"/><path d="M6 11v17c0 2.5 6.3 4.5 14 4.5s14-2 14-4.5V11M11 14.5v17M29 14.5v17M9 33l-2 4M31 33l2 4"/>',
+  htom: '<ellipse cx="20" cy="14" rx="12" ry="4"/><path d="M8 14v12c0 2.2 5.4 4 12 4s12-1.8 12-4V14M12 17v12M28 17v12"/>',
+  cow: '<path d="M13 9h14l5 24H8z"/><path d="M15 9V5h10v4M8 33h24"/><path d="M16 15l-1.5 13" stroke-width="1.4"/>',
+};
+// [centre x, centre y, diameter] per track (KICK SNARE CLAP C.HAT O.HAT LO TOM HI TOM C.BELL) in a design box;
+// the wide panel uses a long low strip, the tall panel a deeper box with two loose rows
+const PAD_LAYOUTS = [
+  { w: 1000, h: 200, p: [[545, 102, 176], [262, 104, 140], [832, 120, 114], [62, 58, 96], [134, 146, 92], [698, 66, 118], [398, 60, 106], [940, 60, 92]] },
+  { w: 760, h: 320, p: [[430, 205, 196], [240, 200, 156], [640, 215, 126], [70, 72, 108], [98, 228, 108], [560, 72, 118], [270, 66, 108], [690, 56, 92]] },
+];
+const padEls = [];
+function buildDrumPads() {
+  const dk = $('dk');
+  dk.innerHTML = TRACKS.map((tr, i) => `<div class="pd" data-t="${i}"><i></i><svg viewBox="0 0 40 40">${PAD_ICONS[tr.voice]}</svg><b>${tr.short}</b></div>`).join('');
+  dk.querySelectorAll('.pd').forEach(el => padEls.push({ el, led: el.querySelector('i'), x: 0, y: 0, r: 0 }));
+  dk.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const b = dk.getBoundingClientRect(), k = b.width / dk.clientWidth || 1;
+    const x = (e.clientX - b.left) / k, y = (e.clientY - b.top) / k;
+    // the pad whose circle holds the touch, else the nearest one if the touch is just off its rim
+    let best = -1, bd = 1e9;
+    padEls.forEach((p, i) => { const d = Math.hypot(x - p.x, y - p.y) / p.r; if (d < bd) { bd = d; best = i; } });
+    if (best < 0 || bd > 1.25) return;
+    hitPad(best, Math.min(bd, 1), (x - padEls[best].x) / padEls[best].r, (y - padEls[best].y) / padEls[best].r);
+  });
+}
+function layoutPads() {
+  const dk = $('dk'), W = dk.clientWidth, H = dk.clientHeight;
+  if (!W || !H) return;
+  // whichever layout gives the bigger pads in this box
+  const fitK = L => Math.min(W / L.w, H / L.h);
+  const L = fitK(PAD_LAYOUTS[1]) > fitK(PAD_LAYOUTS[0]) * 1.1 ? PAD_LAYOUTS[1] : PAD_LAYOUTS[0], k = fitK(L) * 0.97;
+  const ox = (W - L.w * k) / 2, oy = (H - L.h * k) / 2;
+  L.p.forEach(([cx, cy, d], i) => {
+    const p = padEls[i]; p.x = ox + cx * k; p.y = oy + cy * k; p.r = d * k / 2;
+    Object.assign(p.el.style, { left: (p.x - p.r) + 'px', top: (p.y - p.r) + 'px', width: 2 * p.r + 'px', height: 2 * p.r + 'px' });
+    p.el.querySelector('b').style.fontSize = clamp(p.r / 6, 8, 11) + 'px';
+  });
+}
+// d = distance from the centre (0) to the rim (1); dx, dy = where on the pad, for the glow
+function hitPad(i, d, dx, dy) {
+  initAudio();
+  const v = state.padVel === 'fixed' ? 1 : clamp(1 - 0.7 * d, 0.3, 1);
+  drum(i, ctx.currentTime + 0.005, trackGains[i], v);
+  midiNote(9, TRACKS[i].gm, v, ctx.currentTime + 0.005, 0.05);
+  const el = padEls[i].el;
+  el.style.setProperty('--hx', (50 + 50 * dx) + '%'); el.style.setProperty('--hy', (50 + 50 * dy) + '%');
+  el.classList.add('hit'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('hit'), 110);
+  if (liveRec && playing) {
+    const n = nearestStep(), p = pat();
+    if (n && !p.drums[i][n.step]) { if (!take) { remember(); take = true; } p.drums[i][n.step] = true; save(); dirty = true; renderTrigs(); }
+  }
+  flash(TRACKS[i].short + ' · VEL ' + Math.round(v * 127));
+  if (state.sel !== i) selectTrack(i); else renderDrumPads();
+}
+function renderDrumPads() {
+  padEls.forEach((p, i) => { p.el.classList.toggle('sel', i === state.sel); p.el.classList.toggle('mute', !isOn(state.kit[i])); });
+  const fixed = state.padVel === 'fixed', vb = $('dkVel');
+  vb.textContent = fixed ? 'VELOCITY: FIXED' : 'VELOCITY: BY TAP'; vb.classList.toggle('lit', !fixed);
+  const rec = liveRec && playing, h = $('dkHint');
+  h.classList.toggle('rec', rec);
+  h.textContent = rec ? '● Recording · hits snap to the 16 steps' : liveRec ? 'Press ▶ to start recording' : (fixed ? 'Every hit at full level' : 'Centre of a pad = louder') + ' · ● REC + ▶ to record';
+}
+function wireDrumPads() {
+  press($('dkVel'), () => { state.padVel = state.padVel === 'fixed' ? 'tap' : 'fixed'; save(); renderDrumPads(); });
+}
+
 /* function keys */
 let clip = null;
 function wire() {
   press($('kFunc'), () => { shift = !shift; $('kFunc').classList.toggle('lit', shift); });
   press($('kMidi'), () => { takeShift(); toggleMidi(); });
-  press($('kScale'), () => { takeShift(); scaleMode = !scaleMode; fxMode = false; refresh(); });
+  press($('kScale'), () => { takeShift(); scaleMode = !scaleMode; fxMode = 0; refresh(); });
   let taps = [];
   press($('kTap'), () => {
     takeShift();
@@ -1319,7 +1481,7 @@ function refresh() {
   const mel = isMel();
   document.querySelectorAll('[data-mode]').forEach(k => k.classList.toggle('lit', String(state.mode) === k.dataset.mode));
   $('kScale').classList.toggle('lit', scaleMode);
-  $('kbFx').classList.toggle('lit', fxMode);
+  $('kbFx').classList.toggle('lit', !!fxMode); $('kbFx').textContent = fxMode ? 'FX: ' + FX_PAGES[fxMode] : 'FX';
   applyMix();
   $('kMidi').classList.toggle('lit', midiOn);
   $('kPlay').classList.toggle('litg', playing);
@@ -1338,10 +1500,14 @@ function refresh() {
       t.mute.classList.toggle('litr', state.kit[i].mute); t.solo.classList.toggle('lit', state.kit[i].solo);
     }
   });
-  const keys = kbShown();
+  const keys = kbShown(), dpads = !!state.keysOn && !mel;
   unit.classList.toggle('keys', keys);
+  const padsNew = dpads && !unit.classList.contains('pads');
+  unit.classList.toggle('pads', dpads);
   $('kKeys').classList.toggle('lit', !!state.keysOn);
+  $('kKeys').textContent = mel ? 'KEYS' : 'PADS';
   if (keys) { buildKb(); renderKbBar(); } else if (kbHeld.size) kbAllUp();
+  if (dpads) { if (padsNew) layoutPads(); renderDrumPads(); }
   renderKnobs(); renderTrigs(); renderPads(); leds();
   dirty = true;
 }
@@ -1361,6 +1527,7 @@ function frame() {
   }
   const t = performance.now();
   tkeys.forEach((k, i) => { const on = !isMel() && t - keyFlash[i] < 90; k.led.className = 'led' + (on ? ' o' : ''); });
+  if (state.keysOn && !isMel()) padEls.forEach((p, i) => { const on = t - keyFlash[i] < 90; if (on !== p.led.classList.contains('o')) p.led.classList.toggle('o', on); });
   if (kbShown()) kbFrame(t);
   $('lClock').className = 'led' + (playing && t - lastBeat < 70 ? ' g' : '');
   $('lIn').className = 'led' + (t - inFlash < 80 ? ' g' : '');
@@ -1368,7 +1535,7 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); wire(); wireKb();
+buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); buildDrumPads(); wire(); wireKb(); wireDrumPads();
 if (isMel()) lastMel = state.mode;
 fit(); refresh();
 setTimeout(fit, 300);
