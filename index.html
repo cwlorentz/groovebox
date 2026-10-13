@@ -127,6 +127,14 @@ h5.silk{grid-column:1/-1}
 .tg.out .key{opacity:.35}
 .tg.ph .key{background:linear-gradient(#f2f2f2,#cfcfcf);box-shadow:0 1px 0 #0e0e10,0 0 22px #ffffff66;transform:translateY(2px)}
 .tg.ph.on .key{background:linear-gradient(#fff,#ffe1c4)}
+.tg.on:not(.ph) .key{filter:brightness(calc(.5 + .5 * var(--v,1)))}
+.tg.cur .key{outline:2px dashed #fff;outline-offset:3px}
+.tg.cur .n{color:#fff}
+/* step entry (REC lit, loop stopped): BACK / STEP n / SKIP move the cursor */
+.sc{display:none;gap:6px;flex:none}
+#unit.steprec .sc{display:flex}
+.sc .k{height:34px;padding:0 12px;font-size:11px;white-space:nowrap}
+.sc .st{min-width:92px;color:#fff;background:linear-gradient(#5a1d18,#3a1310)}
 .tg .n{text-align:center;font-size:10px;color:var(--silk2);font-weight:700}
 /* KEYS: a piano keyboard takes the place of the trig keys on the Bass, Lead and Pad pages */
 .kbbar,.kb{display:none}
@@ -208,6 +216,8 @@ h5.silk{grid-column:1/-1}
 #unit.tall .kbbar .k.in{min-width:0}
 #unit.tall .kbbar{gap:8px}
 #unit.tall .kbbar #kbRange{min-width:80px}
+#unit.tall.steprec .kbbar #kbRange,#unit.tall.steprec .hint{display:none}
+#unit.tall .sc{margin-left:auto}
 /* power-on screen: the first tap unlocks audio and goes full screen */
 #power{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:#0e0e10e6;cursor:pointer}
 #power[hidden]{display:none}
@@ -253,8 +263,8 @@ h5.silk{grid-column:1/-1}
     <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="silk hint" id="kbHint"></span></div>
-      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="silk hint" id="dkHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
+      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kb" id="kb"></div>
       <div class="dk" id="dk"></div>
@@ -295,6 +305,9 @@ const SCALES = [
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const mod = (a, n) => ((a % n) + n) % n;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// a drum step is false (off), true (a full-level hit, as older saves and presets have) or a velocity 0-1
+const hitVel = x => x === true ? 1 : +x || 0;
+const toHit = v => v >= 0.995 ? true : Math.round(v * 100) / 100;
 
 /* ---------------- state ---------------- */
 // A pattern holds the notes; the kit (levels, tuning, mutes) is shared by all 8 patterns.
@@ -686,17 +699,22 @@ let inFlash = 0;
 function onMidiIn(e) {
   const [st, n, v] = e.data;
   inFlash = performance.now();
-  if ((st & 0xf0) !== 0x90 || !v) return;
+  if ((st & 0xf0) === 0x80 || ((st & 0xf0) === 0x90 && !v)) { if (midiStep.delete(n)) stepRelease(); return; }
+  if ((st & 0xf0) !== 0x90) return;
   initAudio();
-  const t = ctx.currentTime + 0.005;
+  const t = ctx.currentTime + 0.005, step = stepRec() && !midiStep.has(n);
+  if (step) { midiStep.add(n); stepPress(); }
   if (isMel()) {
     const j = state.mode; playNote(MEL[j].voice, t, melGains[j], n, v / 127, stepDur() * 2);
     if (liveRec && playing) recordMel(n - state.key.root, v / 127);
+    else if (step) stepWriteMel(n - state.key.root, v / 127);
   } else {
     const i = TRACKS.findIndex(tr => tr.gm === n); const k = i < 0 ? state.sel : i;
-    drum(k, t, trackGains[k], v / 127); if (liveRec && playing) recordDrum(k);
+    drum(k, t, trackGains[k], v / 127);
+    if (liveRec && playing) recordDrum(k, v / 127); else if (step) stepWriteDrum(k, v / 127);
   }
 }
+const midiStep = new Set();   // MIDI notes held during step entry
 
 /* ---------------- scheduler ---------------- */
 let playing = false, curStep = 0, absStep = 0, nextTime = 0, queue = [], queuedPat = -1, liveRec = false;
@@ -711,9 +729,10 @@ function schedule() {
     const t = nextTime + swing, hits = [], notes = [], p = pat();
     for (let k = 0; k < 6; k++) midiSend([0xF8], nextTime + k * sd / 6);
     TRACKS.forEach((tr, i) => {
-      if (p.drums[i][curStep] && isOn(state.kit[i])) {
-        drum(i, t, trackGains[i], 1); hits.push(i);
-        midiNote(9, tr.gm, state.kit[i].vol, t, 0.05);
+      const hv = hitVel(p.drums[i][curStep]);
+      if (hv && isOn(state.kit[i])) {
+        drum(i, t, trackGains[i], hv); hits.push(i);
+        midiNote(9, tr.gm, state.kit[i].vol * hv, t, 0.05);
       }
     });
     p.mel.forEach((m, j) => {
@@ -750,14 +769,14 @@ async function keepAwake(on) {
 }
 function start() {
   initAudio();
-  playing = true; curStep = 0; absStep = 0; queue = [];
+  playing = true; curStep = 0; absStep = 0; queue = []; stepReset();
   if (queuedPat >= 0) { state.pat = queuedPat; queuedPat = -1; }
   nextTime = ctx.currentTime + 0.06;
   midiSend([0xFA]);
   schedule(); timer.start(); keepAwake(true); refresh();
 }
 function stop() {
-  playing = false; take = false; timer.stop(); queue = []; shown = null;
+  playing = false; take = false; timer.stop(); queue = []; shown = null; stepReset(); stepCur = 0;
   midiSend([0xFC]); silenceNotes(); keepAwake(false); refresh();
 }
 
@@ -768,10 +787,43 @@ function nearestStep() {
   const sd = stepDur(), late = ctx.currentTime - shown.time;
   return late > sd / 2 ? { step: (shown.step + 1) % STEPS, abs: shown.abs + 1 } : { step: shown.step, abs: shown.abs };
 }
-function recordDrum(i) {
+function recordDrum(i, v) {
   const n = nearestStep(); if (!n) return;
   const p = pat(); if (p.drums[i][n.step]) return;
-  remember(); p.drums[i][n.step] = true; save(); dirty = true; renderTrigs();
+  remember(); p.drums[i][n.step] = v == null ? true : toHit(v); save(); dirty = true; renderTrigs();
+}
+
+/* ---------------- step entry: REC lit while the loop is stopped ----------------
+   Each key, pad or MIDI note is written on the cursor step. Letting go of every key moves the cursor on,
+   so keys pressed together land on the same step as a chord. One undo per step. */
+let stepCur = 0, stepHeld = 0, stepWrote = false;
+const stepRec = () => liveRec && !playing;
+const stepLen = () => isMel() ? curMel().len : STEPS;
+function stepReset() { stepHeld = 0; stepWrote = false; midiStep.clear(); }
+function stepMove(by, to) {
+  stepCur = to != null ? to : mod(stepCur + by, stepLen());
+  renderStepBar(); renderTrigs(); dirty = true;
+}
+function stepPress() { stepHeld++; }
+function stepRelease() {
+  if (stepHeld <= 0 || --stepHeld > 0) return;
+  if (stepWrote) { stepWrote = false; stepMove(1); }
+}
+function stepMark() { if (!stepWrote) { remember(); stepWrote = true; } }
+function stepWriteDrum(i, v) {
+  stepMark(); pat().drums[i][stepCur % STEPS] = toHit(v); save(); dirty = true; renderTrigs();
+}
+function stepWriteMel(r, v) {
+  const m = curMel(), s = stepCur % m.len;
+  stepMark();
+  let n = m.notes.find(x => x.s === s && snap(x.r) === snap(r));
+  if (n) n.v = v; else { n = { s, r, l: lastLen, v }; m.notes.push(n); }
+  selNote = n; save(); refresh();
+}
+function renderStepBar() {
+  const L = stepLen();
+  if (stepCur >= L) stepCur = 0;
+  document.querySelectorAll('.sc .st').forEach(el => { el.textContent = 'STEP ' + (stepCur + 1) + '/' + L; });
 }
 function recordMel(r, v) {
   const n = nearestStep(); if (!n) return;
@@ -850,7 +902,7 @@ function drawOled() {
   og.fillStyle = FG; og.fillRect(12, 6, 26, 20); og.fillStyle = BG; og.fillText(pl, 18, 17);
   og.fillStyle = FG;
   const bar = ph ? Math.floor(ph.step / 4) + 1 : 1;
-  og.fillText(queuedPat >= 0 ? 'NEXT ' + 'ABCDEFGH'[queuedPat] : (playing ? 'BEAT ' + bar + '/4' : 'STOPPED'), 48, 17);
+  og.fillText(queuedPat >= 0 ? 'NEXT ' + 'ABCDEFGH'[queuedPat] : (playing ? 'BEAT ' + bar + '/4' : stepRec() ? 'STEP ' + (stepCur + 1) : 'STOPPED'), 48, 17);
   const what = isMel() ? MEL[state.mode].name.toUpperCase() + '  CH' + (MEL[state.mode].ch + 1) + '  ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase()
     : 'T' + (state.sel + 1) + ' ' + TRACKS[state.sel].short + '  CH10';
   og.textAlign = 'center'; og.fillText(what, OW / 2 + 20, 17);
@@ -867,7 +919,7 @@ function drawOled() {
       og.fillText(tr.short + (state.kit[i].mute ? ' M' : state.kit[i].solo ? ' S' : ''), 15, y + rh / 2 + 1);
       for (let s = 0; s < STEPS; s++) {
         const x = GX + s * cw, lit = pat().drums[i][s], isPh = ph && ph.step === s;
-        if (lit) { og.fillStyle = on ? FG : MID; og.fillRect(x + 1, y + 2, cw - 3, rh - 4); if (isPh) { og.fillStyle = BG; og.fillRect(x + 4, y + 5, cw - 9, rh - 10); } }
+        if (lit) { og.fillStyle = on ? FG : MID; og.globalAlpha = 0.35 + 0.65 * hitVel(lit); og.fillRect(x + 1, y + 2, cw - 3, rh - 4); og.globalAlpha = 1; if (isPh) { og.fillStyle = BG; og.fillRect(x + 4, y + 5, cw - 9, rh - 10); } }
         else { og.strokeStyle = isPh ? FG : DIM; og.lineWidth = 1; og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5); }
       }
     });
@@ -903,6 +955,11 @@ function drawOled() {
     og.font = F(15); og.fillStyle = FG;
     if (off[0]) og.fillText('▲' + off[0] + ' MORE', 12, gy - 4);
     if (off[1]) og.fillText('▼' + off[1] + ' MORE', 12, gy + rows * rh + 5);
+  }
+  // step entry: a dashed box round the step the next key will be written on
+  if (stepRec()) {
+    const x = GX + (stepCur % STEPS) * cw;
+    og.strokeStyle = FG; og.lineWidth = 2; og.setLineDash([5, 4]); og.strokeRect(x - 1, gy, cw + 1, rows * rh); og.setLineDash([]); og.lineWidth = 1;
   }
   // the four lower encoders, as on-screen dials
   const pg = page(), y0 = OH - 30;
@@ -1144,8 +1201,14 @@ function buildTrackKeys() {
     const t = { lbl: w.querySelector('.silk'), key: w.querySelector('.tk'), led: w.querySelector('.led'), ms: w.querySelector('.ms'), mute, solo, num: w.querySelector('b') };
     tkeys.push(t);
     press(t.key, () => {
-      if (isMel()) { const D = baseDeg() + i + rollOff, r = degToR(D); auditionMel(r, 0.85); curNoteR = r; if (liveRec && playing) recordMel(r, 0.85); refresh(); }
-      else { selectTrack(i); drum(i, ctx.currentTime + 0.005, trackGains[i], 1); if (liveRec && playing) recordDrum(i); }
+      if (isMel()) {
+        const D = baseDeg() + i + rollOff, r = degToR(D); auditionMel(r, 0.85); curNoteR = r;
+        if (liveRec && playing) recordMel(r, 0.85); else if (stepRec()) { stepPress(); stepWriteMel(r, 0.85); stepRelease(); }
+        refresh();
+      } else {
+        selectTrack(i); drum(i, ctx.currentTime + 0.005, trackGains[i], 1);
+        if (liveRec && playing) recordDrum(i); else if (stepRec()) { stepPress(); stepWriteDrum(i, 1); stepRelease(); }
+      }
     });
     press(mute, () => { const k = isMel() ? curMkit() : state.kit[i]; k.mute = !k.mute; applyMix(); save(); refresh(); });
     press(solo, () => { const k = isMel() ? curMkit() : state.kit[i]; k.solo = !k.solo; applyMix(); save(); refresh(); });
@@ -1172,6 +1235,10 @@ function buildTrigs() {
 }
 function tapTrig(s) {
   const p = pat();
+  if (stepRec()) {   // in step entry a trig key moves the cursor there
+    if (s >= stepLen()) { flash('STEP ' + (s + 1) + ' IS PAST THE END'); return; }
+    stepMove(0, s); flash('STEP ' + (s + 1)); return;
+  }
   if (!isMel()) {
     remember(); p.drums[state.sel][s] = !p.drums[state.sel][s];
     if (p.drums[state.sel][s] && !playing) drum(state.sel, ctx.currentTime + 0.005, trackGains[state.sel], 1);
@@ -1192,16 +1259,20 @@ function tapTrig(s) {
   save(); refresh();
 }
 function renderTrigs() {
-  const p = pat(), ph = shown && shown.pat === state.pat ? shown : null;
+  const p = pat(), ph = shown && shown.pat === state.pat ? shown : null, cur = stepRec() ? stepCur : -1;
   if (!isMel()) {
     const row = p.drums[state.sel];
-    trigs.forEach((w, s) => { w.className = 'tg' + (row[s] ? ' on' : '') + (ph && ph.step === s ? ' ph' : ''); });
+    trigs.forEach((w, s) => {
+      w.className = 'tg' + (row[s] ? ' on' : '') + (ph && ph.step === s ? ' ph' : '') + (cur === s ? ' cur' : '');
+      w.style.setProperty('--v', row[s] ? hitVel(row[s]) : 1);
+    });
   } else {
     const m = curMel(), at = ph ? ph.abs % m.len : -1;
     const on = new Set(), tie = new Set();
     for (const n of m.notes) { on.add(n.s); for (let k = 1; k < n.l && n.s + k < m.len; k++) tie.add(n.s + k); }
     trigs.forEach((w, s) => {
-      w.className = 'tg' + (on.has(s) ? ' on' : tie.has(s) ? ' tie' : '') + (s === at ? ' ph' : '') + (s >= m.len ? ' out' : '') + (selNote && selNote.s === s && on.has(s) ? ' sel' : '');
+      w.className = 'tg' + (on.has(s) ? ' on' : tie.has(s) ? ' tie' : '') + (s === at ? ' ph' : '') + (s >= m.len ? ' out' : '') + (selNote && selNote.s === s && on.has(s) ? ' sel' : '') + (cur === s ? ' cur' : '');
+      w.style.removeProperty('--v');
     });
   }
 }
@@ -1259,8 +1330,8 @@ function renderKbBar() {
   $('kbIn').textContent = inKey() ? 'IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
   $('kbIn').classList.toggle('lit', inKey());
   const rec = liveRec && playing, h = $('kbHint');
-  h.classList.toggle('rec', rec);
-  h.textContent = rec ? '● Recording · notes snap to the 16 steps' : liveRec ? 'Press ▶ to start recording' : 'Lower on a key = louder · ● REC + ▶ to record';
+  h.classList.toggle('rec', liveRec);
+  h.textContent = rec ? '● Recording · notes snap to the 16 steps' : liveRec ? '● Step rec · hold keys together for a chord' : 'Lower on a key = louder · ● REC + ▶ to record';
 }
 const kbKeyAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#kb [data-m]') : null; };
 function kbDown(id, el, e) {
@@ -1280,7 +1351,7 @@ function kbDown(id, el, e) {
       Object.assign(h, { note, mel, abs: n.abs });
       save(); dirty = true;
     }
-  }
+  } else if (stepRec()) { stepPress(); h.step = true; stepWriteMel(m - state.key.root, v); }
   kbHeld.set(id, h); el.classList.add('on');
 }
 function kbUp(id) {
@@ -1295,6 +1366,7 @@ function kbUp(id) {
   }
   const el = kbEls.get(h.m);
   if (el && ![...kbHeld.values()].some(x => x.m === h.m)) el.classList.remove('on');
+  if (h.step) stepRelease();
 }
 function kbAllUp() { for (const id of [...kbHeld.keys()]) kbUp(id); }
 function wireKb() {
@@ -1359,7 +1431,7 @@ const PAD_LAYOUTS = [
   { w: 1000, h: 200, p: [[545, 102, 176], [262, 104, 140], [832, 120, 114], [62, 58, 96], [134, 146, 92], [698, 66, 118], [398, 60, 106], [940, 60, 92]] },
   { w: 760, h: 320, p: [[430, 205, 196], [240, 200, 156], [640, 215, 126], [70, 72, 108], [98, 228, 108], [560, 72, 118], [270, 66, 108], [690, 56, 92]] },
 ];
-const padEls = [];
+const padEls = [], padStep = new Set();   // fingers down on the pads during step entry
 function buildDrumPads() {
   const dk = $('dk');
   dk.innerHTML = TRACKS.map((tr, i) => `<div class="pd" data-t="${i}"><i></i><svg viewBox="0 0 40 40">${PAD_ICONS[tr.voice]}</svg><b>${tr.short}</b></div>`).join('');
@@ -1372,6 +1444,7 @@ function buildDrumPads() {
     let best = -1, bd = 1e9;
     padEls.forEach((p, i) => { const d = Math.hypot(x - p.x, y - p.y) / p.r; if (d < bd) { bd = d; best = i; } });
     if (best < 0 || bd > 1.25) return;
+    if (stepRec()) { padStep.add(e.pointerId); stepPress(); }
     hitPad(best, Math.min(bd, 1), (x - padEls[best].x) / padEls[best].r, (y - padEls[best].y) / padEls[best].r);
   });
 }
@@ -1399,9 +1472,11 @@ function hitPad(i, d, dx, dy) {
   el.classList.add('hit'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('hit'), 110);
   if (liveRec && playing) {
     const n = nearestStep(), p = pat();
-    if (n && !p.drums[i][n.step]) { if (!take) { remember(); take = true; } p.drums[i][n.step] = true; save(); dirty = true; renderTrigs(); }
+    if (n) { if (!take) { remember(); take = true; } p.drums[i][n.step] = toHit(v); save(); dirty = true; renderTrigs(); }
   }
-  flash(TRACKS[i].short + ' · VEL ' + Math.round(v * 127));
+  const at = stepRec() ? 'STEP ' + (stepCur + 1) + ' · ' : '';
+  if (stepRec()) stepWriteDrum(i, v);
+  flash(at + TRACKS[i].short + ' · VEL ' + Math.round(v * 127));
   if (state.sel !== i) selectTrack(i); else renderDrumPads();
 }
 function renderDrumPads() {
@@ -1409,11 +1484,13 @@ function renderDrumPads() {
   const fixed = state.padVel === 'fixed', vb = $('dkVel');
   vb.textContent = fixed ? 'VELOCITY: FIXED' : 'VELOCITY: BY TAP'; vb.classList.toggle('lit', !fixed);
   const rec = liveRec && playing, h = $('dkHint');
-  h.classList.toggle('rec', rec);
-  h.textContent = rec ? '● Recording · hits snap to the 16 steps' : liveRec ? 'Press ▶ to start recording' : (fixed ? 'Every hit at full level' : 'Centre of a pad = louder') + ' · ● REC + ▶ to record';
+  h.classList.toggle('rec', liveRec);
+  h.textContent = rec ? '● Recording · hits snap to the 16 steps' : liveRec ? '● Step rec · pads hit together share a step' : (fixed ? 'Every hit at full level' : 'Centre of a pad = louder') + ' · ● REC + ▶ to record';
 }
 function wireDrumPads() {
   press($('dkVel'), () => { state.padVel = state.padVel === 'fixed' ? 'tap' : 'fixed'; save(); renderDrumPads(); });
+  const up = e => { if (padStep.delete(e.pointerId)) stepRelease(); };
+  addEventListener('pointerup', up); addEventListener('pointercancel', up);
 }
 
 /* function keys */
@@ -1454,11 +1531,18 @@ function wire() {
   document.querySelectorAll('[data-mode]').forEach(k => press(k, () => {
     takeShift(); const m = k.dataset.mode; state.mode = m === 'drums' ? 'drums' : +m;
     if (m !== 'drums') lastMel = +m;
-    kbAllUp(); take = false; selNote = null; curNoteR = null; rollOff = 0; save(); refresh();
+    kbAllUp(); stepReset(); take = false; selNote = null; curNoteR = null; rollOff = 0; save(); refresh();
   }));
   press($('kPlay'), () => { if (playing) stop(); else start(); });
   press($('kStop'), () => { if (playing) stop(); else { queuedPat = -1; refresh(); } });
-  press($('kRec'), () => { liveRec = !liveRec; take = false; flash(liveRec ? 'LIVE REC: TAP KEYS' : 'LIVE REC OFF'); refresh(); });
+  // REC with the loop playing records live; with it stopped, each key is written on the next step
+  press($('kRec'), () => {
+    liveRec = !liveRec; take = false; stepReset(); stepCur = 0;
+    flash(!liveRec ? 'REC OFF' : playing ? 'LIVE REC: TAP KEYS' : 'STEP REC: STEP 1'); refresh();
+  });
+  document.querySelectorAll('.sc [data-st]').forEach(k => press(k, () => {
+    const by = +k.dataset.st; stepMove(by, by ? null : 0); flash('STEP ' + (stepCur + 1));
+  }));
   press($('kPre'), openPresets);
   press($('preX'), closePresets);
   $('presets').addEventListener('pointerdown', e => { if (e.target.id === 'presets') { e.preventDefault(); closePresets(); } });
@@ -1486,6 +1570,7 @@ function refresh() {
   $('kMidi').classList.toggle('lit', midiOn);
   $('kPlay').classList.toggle('litg', playing);
   $('kRec').classList.toggle('litr', liveRec);
+  unit.classList.toggle('steprec', stepRec()); renderStepBar();
   tkeys.forEach((t, i) => {
     if (mel) {
       const r = degToR(baseDeg() + i + rollOff);
