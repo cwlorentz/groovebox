@@ -128,6 +128,34 @@ h5.silk{grid-column:1/-1}
 .tg.ph .key{background:linear-gradient(#f2f2f2,#cfcfcf);box-shadow:0 1px 0 #0e0e10,0 0 22px #ffffff66;transform:translateY(2px)}
 .tg.ph.on .key{background:linear-gradient(#fff,#ffe1c4)}
 .tg .n{text-align:center;font-size:10px;color:var(--silk2);font-weight:700}
+/* KEYS: a piano keyboard takes the place of the trig keys on the Bass, Lead and Pad pages */
+.kbbar,.kb{display:none}
+#unit.keys .bars,#unit.keys .trigs{display:none}
+#unit.keys .kbbar{display:flex}
+#unit.keys .kb{display:block}
+.kbbar{align-items:center;gap:10px;height:34px}
+.kbbar .k{height:34px;padding:0 14px;font-size:11px}
+.kbbar .k.in{min-width:150px}
+.kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
+.kbbar .hint{margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+.kbbar .hint.rec{color:#ff7a6e}
+.kb{position:relative;height:198px;border-radius:6px;background:#141416;box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
+.kb::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;z-index:3;background:linear-gradient(#5a1d18,#3a1310);box-shadow:0 1px 3px #000a;pointer-events:none}
+.kb .w,.kb .b{position:absolute;top:0;cursor:pointer}
+.kb .w{bottom:3px;border-radius:0 0 6px 6px;background:linear-gradient(#d6d4cd,#eeece6 70%,#cfcdc6);box-shadow:inset 0 -7px 0 #b3b1aa,0 2px 3px #0009}
+.kb .b{height:60%;z-index:2;border-radius:0 0 5px 5px;background:linear-gradient(#141416,#2f3034 85%,#1b1b1e);box-shadow:inset 0 -5px 0 #3e3f44,0 3px 4px #000c}
+.kb .w span{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.04em;color:#77756f}
+.kb .w.root span,.kb .b.root span{color:#e06a00}
+.kb .root::after{content:"";position:absolute;left:50%;bottom:32px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--org);box-shadow:0 0 6px #ff8a1f}
+.kb .b.root::after{bottom:12px}
+.kb .w.off{background:linear-gradient(#7a7873,#8c8a84 70%,#75736e);box-shadow:inset 0 -7px 0 #64625d,0 2px 3px #0009}
+.kb .w.off span{color:#55534e}
+.kb .b.off{background:linear-gradient(#3a3b3f,#313236);box-shadow:inset 0 -3px 0 #2a2b2e;opacity:.55}
+.kb .w.glow{background:linear-gradient(#ffd9b0,#fff1e2 70%,#ffd0a0);box-shadow:inset 0 -7px 0 #e9a868,0 0 14px #ff8a1f66}
+.kb .b.glow{background:linear-gradient(#5a3418,#8a5226 85%,#5a3418);box-shadow:inset 0 -5px 0 #b06a2c,0 0 12px #ff8a1f88}
+.kb .w.on{background:linear-gradient(#ff9a3c,#ffb26b 70%,#e86d0c);box-shadow:inset 0 -3px 0 #c45a08,0 0 22px #ff8a1f88}
+.kb .b.on{background:linear-gradient(#e86d0c,#ff9a3c 85%,#c45a08);box-shadow:inset 0 -2px 0 #a04a06,0 0 18px #ff8a1f99}
+.kb .on span{color:#4a2306}
 /* tall layout: the same panel restacked for phones and tablets held upright.
    fit() switches to it whenever it makes the controls bigger than the wide panel would. */
 #unit.tall{width:760px;grid-template-columns:repeat(8,1fr);grid-template-rows:34px minmax(250px,3fr) auto auto auto auto minmax(220px,2fr);gap:14px 10px}
@@ -149,6 +177,8 @@ h5.silk{grid-column:1/-1}
 #unit.tall .bars{display:none}
 #unit.tall .trigs{flex:1;grid-template-columns:repeat(8,1fr);grid-auto-rows:1fr;gap:12px 9px}
 #unit.tall .tg .key{height:auto;flex:1;min-height:80px}
+#unit.tall .kb{height:auto;flex:1;min-height:180px}
+#unit.tall .kbbar .k.in{min-width:120px}
 /* power-on screen: the first tap unlocks audio and goes full screen */
 #power{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:#0e0e10e6;cursor:pointer}
 #power[hidden]{display:none}
@@ -170,7 +200,7 @@ h5.silk{grid-column:1/-1}
       <div class="jk"><div class="led" id="lIn"></div><span class="silk">MIDI In</span></div>
       <div class="jk"><div class="led" id="lOut"></div><span class="silk">MIDI Out</span></div>
       <div class="jk"><div class="led" id="lClock"></div><span class="silk">Clock</span></div>
-      <div class="k mini" id="kPre">PRESETS</div><div class="k mini" id="kFs">FULL SCREEN</div>
+      <div class="k mini" id="kKeys">KEYS</div><div class="k mini" id="kPre">PRESETS</div><div class="k mini" id="kFs">FULL SCREEN</div>
     </div>
   </div>
 
@@ -194,7 +224,9 @@ h5.silk{grid-column:1/-1}
     <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><span class="silk hint" id="kbHint"></span></div>
       <div class="trigs" id="trigs"></div>
+      <div class="kb" id="kb"></div>
     </div>
   </div>
 </div>
@@ -465,7 +497,16 @@ function playNote(kind, t, out, midi, v, dur) {
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + P.a);
   g.gain.setTargetAtTime(pk * P.s, t + P.a, P.d); g.gain.setTargetAtTime(0, end, P.r);
   lp.connect(g).connect(out);
-  const vo = { g, oscs }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
+  const vo = { g, oscs, P }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
+  return vo;
+}
+// let go of a note started with a long `dur` (the on-screen keyboard holds notes while a finger is down)
+function releaseNote(vo) {
+  if (!vo || !voicesOn.has(vo)) return;
+  const t = ctx.currentTime, gn = vo.g.gain;
+  if (gn.cancelAndHoldAtTime) gn.cancelAndHoldAtTime(t); else { gn.cancelScheduledValues(t); gn.setValueAtTime(gn.value, t); }
+  gn.setTargetAtTime(0, t, vo.P.r);
+  for (const o of vo.oscs) { try { o.stop(t + vo.P.r * 6 + 0.05); } catch (e) {} }
 }
 function silenceNotes() {
   if (!ctx) return;
@@ -558,7 +599,7 @@ function schedule() {
     const sd = stepDur();
     if (curStep === 0 && queuedPat >= 0) { state.pat = queuedPat; queuedPat = -1; absStep = 0; switched = true; save(); }
     const swing = (curStep % 2) ? (state.swing / 100 * 2 - 1) * sd : 0;
-    const t = nextTime + swing, hits = [], p = pat();
+    const t = nextTime + swing, hits = [], notes = [], p = pat();
     for (let k = 0; k < 6; k++) midiSend([0xF8], nextTime + k * sd / 6);
     TRACKS.forEach((tr, i) => {
       if (p.drums[i][curStep] && isOn(state.kit[i])) {
@@ -573,10 +614,10 @@ function schedule() {
         const pitch = snap(n.r) + state.key.root;
         playNote(MEL[j].voice, t, melGains[j], pitch, n.v, n.l * sd);
         midiNote(MEL[j].ch, pitch, n.v, t, n.l * sd * 0.95);
-        hits.push('m' + j);
+        hits.push('m' + j); notes.push([j, pitch, n.l * sd]);
       }
     });
-    queue.push({ step: curStep, abs: absStep, time: t, hits, pat: state.pat });
+    queue.push({ step: curStep, abs: absStep, time: t, hits, notes, pat: state.pat });
     nextTime += sd; curStep = (curStep + 1) % STEPS; absStep++;
   }
 }
@@ -607,7 +648,7 @@ function start() {
   schedule(); timer.start(); keepAwake(true); refresh();
 }
 function stop() {
-  playing = false; timer.stop(); queue = []; shown = null;
+  playing = false; take = false; timer.stop(); queue = []; shown = null;
   midiSend([0xFC]); silenceNotes(); keepAwake(false); refresh();
 }
 
@@ -1061,6 +1102,119 @@ function buildPads() {
 const hasNotes = pt => pt.drums.some(r => r.some(Boolean)) || pt.mel.some(m => m.notes.length);
 function renderPads() { pads.forEach((d, i) => { d.className = 'lp' + (hasNotes(state.pats[i]) ? ' has' : '') + (i === state.pat ? ' cur' : '') + (i === queuedPat ? ' q' : ''); }); }
 
+/* ---------------- KEYS: on-screen piano for Bass, Lead and Pad ----------------
+   Two octaves from the key's root, starting at the track's OCT. Notes sound while a finger is down;
+   lower on a key plays louder. With REC lit and the loop playing, each note is written into the pattern,
+   its start and end snapped to the 16 steps. */
+let take = false;                 // one undo step per recording take
+let lastMel = 1;
+const kbShown = () => !!state.keysOn && isMel();
+const inKey = () => state.key.scale !== 'Chromatic';
+const kbLow = () => { const m = 12 * (curMkit().oct + 1) + state.key.root; return [1, 3, 6, 8, 10].includes(mod(m, 12)) ? m - 1 : m; };
+const isBlack = m => [1, 3, 6, 8, 10].includes(mod(m, 12));
+const inScale = m => scaleIv().includes(mod(m - state.key.root, 12));
+const kbEls = new Map(), kbHeld = new Map(), kbGlow = new Map();
+let kbSig = '';
+function buildKb() {
+  const lo = kbLow(), hi = lo + 24 + (isBlack(lo + 24) ? 1 : 0);
+  const sig = [lo, hi, state.key.root, state.key.scale].join();
+  if (sig === kbSig) return; kbSig = sig;
+  const kb = $('kb'), W = [];
+  for (let m = lo; m <= hi; m++) if (!isBlack(m)) W.push(m);
+  const ww = 100 / W.length;
+  let html = '';
+  for (let m = lo; m <= hi; m++) {
+    const black = isBlack(m), cls = (black ? 'b' : 'w') + (mod(m - state.key.root, 12) === 0 ? ' root' : '') + (inScale(m) ? '' : ' off');
+    const left = black ? `calc(${W.filter(x => x < m).length * ww}% - ${ww * 0.3}%)` : `calc(${W.indexOf(m) * ww}% + 2px)`;
+    const width = black ? `${ww * 0.6}%` : `calc(${ww}% - 4px)`;
+    html += `<div class="${cls}" data-m="${m}" style="left:${left};width:${width}">${black ? (mod(m - state.key.root, 12) === 0 ? '<span></span>' : '') : '<span>' + (mod(m, 12) === 0 || mod(m - state.key.root, 12) === 0 ? noteName(m) : NOTE_NAMES[mod(m, 12)]) + '</span>'}</div>`;
+  }
+  kb.innerHTML = html; kbEls.clear();
+  kb.querySelectorAll('[data-m]').forEach(el => kbEls.set(+el.dataset.m, el));
+  for (const h of kbHeld.values()) if (h.m != null && kbEls.has(h.m)) kbEls.get(h.m).classList.add('on');
+  $('kbRange').textContent = noteName(lo) + ' – ' + noteName(hi);
+}
+function renderKbBar() {
+  $('kbIn').textContent = inKey() ? 'IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
+  $('kbIn').classList.toggle('lit', inKey());
+  const rec = liveRec && playing, h = $('kbHint');
+  h.classList.toggle('rec', rec);
+  h.textContent = rec ? '● Recording · notes snap to the 16 steps' : liveRec ? 'Press ▶ to start recording' : 'Lower on a key = louder · ● REC + ▶ to record';
+}
+const kbKeyAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#kb [data-m]') : null; };
+function kbDown(id, el, e) {
+  const m = +el.dataset.m;
+  if (inKey() && !inScale(m)) { kbHeld.set(id, { m: null }); return; }
+  initAudio();
+  const r = el.getBoundingClientRect(), v = clamp(0.35 + 0.65 * (e.clientY - r.top) / r.height, 0.3, 1);
+  const j = state.mode, h = { m, j, v, vo: playNote(MEL[j].voice, ctx.currentTime + 0.005, melGains[j], m, v, 60) };
+  midiSend([0x90 | MEL[j].ch, m, clamp(Math.round(v * 127), 1, 127)]);
+  if (liveRec && playing) {
+    const n = nearestStep();
+    if (n) {
+      const mel = curMel(), s = n.abs % mel.len, r0 = m - state.key.root;
+      if (!take) { remember(); take = true; }
+      let note = mel.notes.find(x => x.s === s && snap(x.r) === snap(r0));
+      if (note) note.v = v; else { note = { s, r: r0, l: 1, v }; mel.notes.push(note); }
+      Object.assign(h, { note, mel, abs: n.abs });
+      save(); dirty = true;
+    }
+  }
+  kbHeld.set(id, h); el.classList.add('on');
+}
+function kbUp(id) {
+  const h = kbHeld.get(id); if (!h) return;
+  kbHeld.delete(id);
+  if (h.m == null) return;
+  releaseNote(h.vo);
+  midiSend([0x80 | MEL[h.j].ch, h.m, 0]);
+  if (h.note) {
+    const n = nearestStep();
+    if (n) { h.note.l = clamp(n.abs - h.abs, 1, Math.min(STEPS, h.mel.len)); save(); dirty = true; }
+  }
+  const el = kbEls.get(h.m);
+  if (el && ![...kbHeld.values()].some(x => x.m === h.m)) el.classList.remove('on');
+}
+function kbAllUp() { for (const id of [...kbHeld.keys()]) kbUp(id); }
+function wireKb() {
+  const kb = $('kb');
+  kb.addEventListener('pointerdown', e => {
+    e.preventDefault(); const el = kbKeyAt(e.clientX, e.clientY); if (!el) return;
+    kbUp(e.pointerId); kbDown(e.pointerId, el, e);
+  });
+  // slide a finger along the keys to play each one in turn
+  kb.addEventListener('pointermove', e => {
+    const h = kbHeld.get(e.pointerId); if (!h) return;
+    const el = kbKeyAt(e.clientX, e.clientY), m = el ? +el.dataset.m : null;
+    if (m === h.m || (h.m == null && el && inKey() && !inScale(m))) return;
+    kbUp(e.pointerId); if (el) kbDown(e.pointerId, el, e); else kbHeld.set(e.pointerId, { m: null });
+  });
+  const up = e => kbUp(e.pointerId);
+  addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  press($('kbDn'), () => { const mk = curMkit(); if (mk.oct > 0) { kbAllUp(); mk.oct--; rollOff = 0; save(); refresh(); } });
+  press($('kbUp'), () => { const mk = curMkit(); if (mk.oct < 6) { kbAllUp(); mk.oct++; rollOff = 0; save(); refresh(); } });
+  // ALL 12 NOTES switches the scale to Chromatic so every key plays as heard; IN KEY goes back to the scale before
+  press($('kbIn'), () => {
+    kbAllUp();
+    if (inKey()) { state.prevScale = state.key.scale; state.key.scale = 'Chromatic'; flash('ALL 12 NOTES'); }
+    else { state.key.scale = state.prevScale && state.prevScale !== 'Chromatic' ? state.prevScale : 'Major'; flash('IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase()); }
+    rollOff = 0; save(); refresh();
+  });
+  press($('kKeys'), () => {
+    takeShift(); state.keysOn = !state.keysOn;
+    if (state.keysOn && !isMel()) { state.mode = lastMel; selNote = null; curNoteR = null; rollOff = 0; }
+    if (state.keysOn) flash('KEYS · ' + MEL[state.mode].name.toUpperCase());
+    save(); refresh();
+  });
+}
+// light the keys the loop is playing on this page
+function kbFrame(now) {
+  for (const [m, el] of kbEls) {
+    const g = (kbGlow.get(m) || 0) > now;
+    if (g !== el.classList.contains('glow')) el.classList.toggle('glow', g);
+  }
+}
+
 /* function keys */
 let clip = null;
 function wire() {
@@ -1098,11 +1252,12 @@ function wire() {
   press($('kUndo'), () => undo(takeShift()));
   document.querySelectorAll('[data-mode]').forEach(k => press(k, () => {
     takeShift(); const m = k.dataset.mode; state.mode = m === 'drums' ? 'drums' : +m;
-    selNote = null; curNoteR = null; rollOff = 0; save(); refresh();
+    if (m !== 'drums') lastMel = +m;
+    kbAllUp(); take = false; selNote = null; curNoteR = null; rollOff = 0; save(); refresh();
   }));
   press($('kPlay'), () => { if (playing) stop(); else start(); });
   press($('kStop'), () => { if (playing) stop(); else { queuedPat = -1; refresh(); } });
-  press($('kRec'), () => { liveRec = !liveRec; flash(liveRec ? 'LIVE REC: TAP KEYS' : 'LIVE REC OFF'); refresh(); });
+  press($('kRec'), () => { liveRec = !liveRec; take = false; flash(liveRec ? 'LIVE REC: TAP KEYS' : 'LIVE REC OFF'); refresh(); });
   press($('kPre'), openPresets);
   press($('preX'), closePresets);
   $('presets').addEventListener('pointerdown', e => { if (e.target.id === 'presets') { e.preventDefault(); closePresets(); } });
@@ -1142,6 +1297,10 @@ function refresh() {
       t.mute.classList.toggle('litr', state.kit[i].mute); t.solo.classList.toggle('lit', state.kit[i].solo);
     }
   });
+  const keys = kbShown();
+  unit.classList.toggle('keys', keys);
+  $('kKeys').classList.toggle('lit', !!state.keysOn);
+  if (keys) { buildKb(); renderKbBar(); } else if (kbHeld.size) kbAllUp();
   renderKnobs(); renderTrigs(); renderPads(); leds();
   dirty = true;
 }
@@ -1154,19 +1313,22 @@ function frame() {
     while (queue.length && queue[0].time <= now) {
       shown = queue.shift(); moved = true;
       for (const h of shown.hits) if (typeof h === 'number') keyFlash[h] = performance.now();
+      for (const [j, m, d] of shown.notes) if (j === state.mode) kbGlow.set(m, performance.now() + Math.max(90, d * 900));
       if (shown.step % 4 === 0) lastBeat = performance.now();
     }
     if (moved) { renderTrigs(); if (switched) { switched = false; refresh(); } dirty = true; }
   }
   const t = performance.now();
   tkeys.forEach((k, i) => { const on = !isMel() && t - keyFlash[i] < 90; k.led.className = 'led' + (on ? ' o' : ''); });
+  if (kbShown()) kbFrame(t);
   $('lClock').className = 'led' + (playing && t - lastBeat < 70 ? ' g' : '');
   $('lIn').className = 'led' + (t - inFlash < 80 ? ' g' : '');
   if (dirty || (msg && t > msgUntil)) { dirty = false; drawOled(); }
   requestAnimationFrame(frame);
 }
 
-buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); wire();
+buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); wire(); wireKb();
+if (isMel()) lastMel = state.mode;
 fit(); refresh();
 setTimeout(fit, 300);
 // installed from the home screen it is already full screen: skip the power-on screen there
