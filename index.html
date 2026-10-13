@@ -157,6 +157,7 @@ h5.silk{grid-column:1/-1}
 .kbbar .k{height:34px;padding:0 14px;font-size:11px;flex:none;white-space:nowrap}
 .kbbar .k.in{min-width:150px}
 .kbbar #kbFx{min-width:80px}
+.kbbar .snd{min-width:112px}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
 .kbbar .hint{margin-left:auto;min-width:0;white-space:normal;text-align:right;line-height:1.35;max-height:34px;overflow:hidden}
 .kbbar .hint.rec{color:#ff7a6e}
@@ -251,8 +252,9 @@ h5.silk{grid-column:1/-1}
 #unit.tall .dkbar .k.in{min-width:0}
 #unit.tall .kbbar .k.in{min-width:0}
 #unit.tall .kbbar{gap:8px}
-#unit.tall .kbbar #kbRange{min-width:80px}
-#unit.tall.steprec .kbbar #kbRange,#unit.tall.steprec .hint{display:none}
+#unit.tall .kbbar #kbRange{display:none}
+#unit.tall .kbbar .snd{min-width:0}
+#unit.tall.steprec .hint,#unit.tall.steprec #kbDn,#unit.tall.steprec #kbUp{display:none}
 #unit.tall .sc{margin-left:auto}
 /* power-on screen: the first tap unlocks audio and goes full screen */
 #power{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:#0e0e10e6;cursor:pointer}
@@ -300,7 +302,7 @@ h5.silk{grid-column:1/-1}
   <div class="trig">
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><div class="k" id="kbBig">EXPAND</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><div class="k" id="kbBig">EXPAND</div><div class="k snd" id="kbSnd"></div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
       <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><div class="k" id="dkBig">EXPAND</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
       <div class="kbmap" id="kbMap"></div>
@@ -580,6 +582,18 @@ const PATCHES = {
   lead: { osc: [['sawtooth', -8, 1, 0.35], ['sawtooth', 8, 1, 0.35], ['square', 0, 2, 0.1]], cut: 900, env: 2600, q: 3, fdec: 0.18, a: 0.008, d: 0.25, s: 0.6, r: 0.12, lvl: 0.42, gate: 0.9 },
   pad: { osc: [['sawtooth', -14, 1, 0.22], ['sawtooth', 14, 1, 0.22], ['sawtooth', -5, 0.5, 0.16], ['triangle', 0, 2, 0.12]], cut: 650, env: 900, q: 1, fdec: 0.9, a: 0.35, d: 1, s: 0.8, r: 0.7, lvl: 0.32, gate: 1 },
 };
+/* SOUND: each synth track can swap its synth for a piano, still made from oscillators. Pianos are built from
+   sine partials that ring and fade on their own (low notes ring longest, upper partials die first), slightly
+   stretched like real strings, with a felt hammer thump; harder touches are brighter. E.PIANO is a two-operator
+   FM tine. HONKY-TONK detunes three strings against each other like an old bar piano. */
+const SOUNDS = [['synth', 'SYNTH'], ['grand', 'GRAND'], ['upright', 'UPRIGHT'], ['epiano', 'E.PIANO'], ['honky', 'HONKY-TONK']];
+const PIANOS = {
+  grand: { n: 8, tilt: 1.3, B: 0.0004, t0: 5, cents: [-1, 1], ham: 0.35, bright: 1, lvl: 0.19 },
+  upright: { n: 7, tilt: 1.05, B: 0.0008, t0: 2.8, cents: [-2.5, 2.5], ham: 0.55, bright: 1.35, lvl: 0.19 },
+  honky: { n: 6, tilt: 0.95, B: 0.0009, t0: 2.6, cents: [-16, 1, 15], ham: 0.6, bright: 1.6, lvl: 0.18 },
+  epiano: { fm: true, t0: 4, lvl: 0.2 },
+};
+const soundOf = j => (j >= 0 && state.mkit[j].snd) || 'synth';
 const voicesOn = new Set();
 // RELEASE (seconds) is how long a note takes to fade out after it ends or the key is let go
 const ECHO_TIMES = [['1/16', 0.25], ['1/8', 0.5], ['3/16', 0.75], ['1/4', 1]];
@@ -603,8 +617,11 @@ function curve(kind, amt) {
 const lastPitch = [null, null, null];
 const FX_PAGES = ['', 'ECHO', 'FUNK', 'SPACE'];   // GLIDE slides each track from the note it played last
 function playNote(kind, t, out, midi, v, dur) {
-  const P = PATCHES[kind], f = 440 * Math.pow(2, (midi - 69) / 12);
-  const j = MEL.findIndex(m => m.voice === kind), rel = j < 0 ? P.r * 4.6 : fxOf(j).rel, tau = rel / 4.6;
+  const j = MEL.findIndex(m => m.voice === kind), PN = PIANOS[soundOf(j)], f = 440 * Math.pow(2, (midi - 69) / 12);
+  // a piano has no sustain stage: its partials fade by themselves and the envelope only opens and damps
+  const P = PN ? { osc: [], a: 0.003, d: 1, s: 1, gate: 1, lvl: PN.lvl, q: 0.5, fdec: 0.35,
+    cut: Math.min(f * 3 * (PN.bright || 1) + 400, 16000), env: Math.min(f * 10 * (PN.bright || 1) + 3000, 16000) } : PATCHES[kind];
+  const rel = j < 0 ? P.r * 4.6 : fxOf(j).rel, tau = rel / 4.6;
   const fx = j < 0 ? FX_EXTRA : fxOf(j);
   const lp = filt('lowpass', P.cut, P.q), g = ctx.createGain(), mix = ctx.createGain();
   const end = Math.max(t + dur * P.gate, t + P.a + 0.01), off = end + rel * 1.3 + 0.05;
@@ -619,6 +636,7 @@ function playNote(kind, t, out, midi, v, dur) {
     if (from) { o.frequency.setValueAtTime(from * mult, t); o.frequency.exponentialRampToValueAtTime(f * mult, t + gt); }
     o.detune.value = det; og.gain.value = lvl; o.connect(og).connect(mix); o.start(t); o.stop(off); return o;
   });
+  if (PN) pianoTone(PN, t, f, v, from, gt, mix, off, oscs);
   const extra = [];
   // ZAP: each note starts up to two octaves high and dives down like a laser
   if (fx.zap > 0) { const z = fx.zap / 100; for (const o of oscs) { const d0 = o.detune.value; o.detune.setValueAtTime(d0 + 2400 * z, t); o.detune.setTargetAtTime(d0, t, 0.015 + 0.07 * z); } }
@@ -655,6 +673,37 @@ function playNote(kind, t, out, midi, v, dur) {
   oscs.push(...extra);
   const vo = { g, oscs, rel }; voicesOn.add(vo); oscs[0].onended = () => voicesOn.delete(vo);
   return vo;
+}
+// the strings (or the tine) of one piano note, added to `oscs` so GLIDE, ZAP, WOBBLE and release reach them
+function pianoTone(PN, t, f, v, from, gt, mix, off, oscs) {
+  const ring = PN.t0 * clamp(Math.sqrt(262 / f), 0.25, 2.2);   // seconds a partial takes to fade; longer down low
+  const add = (mult, amp, decay, det) => {
+    const o = osc('sine', f * mult), g = ctx.createGain();
+    if (from) { o.frequency.setValueAtTime(from * mult, t); o.frequency.exponentialRampToValueAtTime(f * mult, t + gt); }
+    o.detune.value = det;
+    // a quick drop after the strike, then the long ring
+    g.gain.setValueAtTime(amp, t); g.gain.setTargetAtTime(amp * 0.4, t, decay * 0.07); g.gain.setTargetAtTime(0, t + decay * 0.12, decay * 0.45);
+    o.connect(g).connect(mix); o.start(t); o.stop(off); oscs.push(o); return o;
+  };
+  if (PN.fm) {
+    // tine: a sine carrier bent by a sine modulator; the bend (the bark) fades fast, harder notes bark more
+    const c = add(1, 0.9, ring, 0), m = osc('sine', f), mg = ctx.createGain(), idx = f * (0.6 + 2.6 * v);
+    if (from) { m.frequency.setValueAtTime(from, t); m.frequency.exponentialRampToValueAtTime(f, t + gt); }
+    mg.gain.setValueAtTime(idx, t); mg.gain.setTargetAtTime(f * 0.15, t, 0.12 + 0.2 * (1 - v));
+    m.connect(mg).connect(c.frequency); m.start(t); m.stop(off); oscs.push(m);
+    if (f * 7 < 12000) add(7, 0.08 * v, 0.25, 0);   // the bell-like ping on top
+    return;
+  }
+  for (let n = 1; n <= PN.n; n++) {
+    const mult = n * Math.sqrt(1 + PN.B * n * n);              // real strings are slightly stretched
+    if (f * mult > 14000) break;
+    const amp = Math.pow(n, -PN.tilt) * (n === 1 ? 1 : 0.35 + 0.65 * v) / PN.cents.length;
+    for (const c of (n <= 3 ? PN.cents : [0])) add(mult, n <= 3 ? amp : amp * PN.cents.length, ring / (1 + 0.45 * (n - 1)), c);
+  }
+  // the felt hammer: a short thump of filtered noise
+  const nz = noiseSrc(t, 0.04), bp = filt('bandpass', Math.min(f * 2.5, 5000), 1.2), ng = ctx.createGain();
+  ng.gain.setValueAtTime(PN.ham * (0.3 + 0.7 * v) * 0.5, t); ng.gain.setTargetAtTime(0, t, 0.012);
+  nz.connect(bp).connect(ng).connect(mix); oscs.push(nz);
 }
 // let go of a note started with a long `dur` (the on-screen keyboard holds notes while a finger is down)
 function releaseNote(vo) {
@@ -1343,11 +1392,13 @@ let lastMel = 1;
 const kbShown = () => !!state.keysOn && isMel();
 const inKey = () => state.key.scale !== 'Chromatic';
 const isBlack = m => [1, 3, 6, 8, 10].includes(mod(m, 12));
-const MAP_LO = 12, MAP_HI = 127;    // the range bar spans C0 to the top MIDI note
+const MAP_LO = 21, MAP_HI = 108;    // the 88 keys of a real piano, A0 to C8
 // as many octaves as fit at a comfortable key width: 3 across the wide panel, 2 when EXPAND or the tall panel narrows it
 const kbOcts = () => clamp(Math.floor(($('kb').clientWidth || 986) / 330), 2, 3);
-const kbLowAt = o => { const m = 12 * (o + 1) + state.key.root; return isBlack(m) ? m - 1 : m; };
-const kbMaxOct = () => { let o = 0; while (o < 7 && kbLowAt(o + 1) + 12 * kbOcts() <= MAP_HI) o++; return o; };
+// the window starts on the key's root at the track's OCT, held inside the 88 keys (so it ends on A0 or C8 at the edges)
+const kbRaw = o => { const m = 12 * (o + 1) + state.key.root; return isBlack(m) ? m - 1 : m; };
+const kbLowAt = o => clamp(kbRaw(o), MAP_LO, MAP_HI - 12 * kbOcts());
+const kbMaxOct = () => { let o = 0; while (o < 7 && kbRaw(o) + 12 * kbOcts() < MAP_HI) o++; return o; };
 const kbOct = () => Math.min(curMkit().oct, kbMaxOct());
 const kbLow = () => kbLowAt(kbOct());
 const inScale = m => scaleIv().includes(mod(m - state.key.root, 12));
@@ -1374,6 +1425,8 @@ function buildKb() {
   $('kbRange').textContent = noteName(lo) + ' – ' + noteName(hi);
 }
 function renderKbBar() {
+  const snd = soundOf(state.mode);
+  $('kbSnd').textContent = SOUNDS.find(x => x[0] === snd)[1]; $('kbSnd').classList.toggle('lit', snd !== 'synth');
   $('kbIn').textContent = inKey() ? 'IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
   $('kbIn').classList.toggle('lit', inKey());
   const rec = liveRec && playing, h = $('kbHint');
@@ -1481,6 +1534,15 @@ function wireKb() {
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
   press($('kbDn'), () => { const mk = curMkit(); if (kbOct() > 0) { kbAllUp(); mk.oct = kbOct() - 1; rollOff = 0; save(); refresh(); } });
   press($('kbUp'), () => { const mk = curMkit(); if (kbOct() < kbMaxOct()) { kbAllUp(); mk.oct = kbOct() + 1; rollOff = 0; save(); refresh(); } });
+  // SOUND: each press moves this synth track to the next sound (SYNTH > GRAND > UPRIGHT > E.PIANO > HONKY-TONK) and plays it
+  press($('kbSnd'), () => {
+    const j = state.mode, mk = state.mkit[j], i = SOUNDS.findIndex(x => x[0] === soundOf(j));
+    mk.snd = SOUNDS[(i + 1) % SOUNDS.length][0];
+    flash(SOUNDS[(i + 1) % SOUNDS.length][1] + ' · ' + MEL[j].name.toUpperCase());
+    const m = kbLow() + 12 * Math.floor(kbOcts() / 2);
+    [0, 4, 7].forEach(d => playNote(MEL[j].voice, ctx.currentTime + 0.01, melGains[j], m + d, 0.7, 0.9));
+    save(); refresh();
+  });
   // EXPAND: the keys (or drum pads) take over the screen and knob area until it is pressed again
   const big = () => { kbAllUp(); state.kbBig = !state.kbBig; save(); refresh(); };
   press($('kbBig'), big); press($('dkBig'), big);
