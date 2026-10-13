@@ -50,9 +50,9 @@ h5.silk{grid-column:1/-1}
 .kw{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .kw .silk{text-align:center}
 /* function block */
-.fn{grid-row:2/4;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:12px 14px;align-content:start;padding-top:6px}
-.fn .k{height:42px}
-.fn h5.gap{margin-top:6px}
+.fn{grid-column:1;grid-row:2/4;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:6px 14px;align-content:start;padding-top:0}
+.fn .k{height:33px}
+.fn h5.gap{margin-top:3px}
 /* OLED */
 .scr{grid-column:2;grid-row:2;background:#151619;border-radius:8px;padding:12px;box-shadow:inset 0 2px 4px #000c,0 1px 0 #ffffff14}
 #oled{width:100%;height:100%;display:block;background:var(--oled);border-radius:3px;box-shadow:inset 0 0 30px #9fdcff10}
@@ -98,7 +98,7 @@ h5.silk{grid-column:1/-1}
 #confirm .row{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
 #confirm .row .k{height:48px;min-width:120px;padding:0 16px;font-size:12px}
 .k.clr{color:#fff;background:linear-gradient(#c8321f,#962112);box-shadow:0 2px 0 #3a0c06,0 3px 6px #000a,inset 0 1px 0 #ffffff40}
-.pads .cl2{grid-column:span 2;grid-row:4;height:34px;font-size:10px;white-space:nowrap}
+.pads .cl2{grid-column:span 2;grid-row:4;height:27px;font-size:10px;white-space:nowrap}
 .k.clr.down{background:linear-gradient(#962112,#7a1a0d)}
 #unit.tall #presets .list{grid-template-columns:repeat(2,1fr);max-height:none}
 #entry .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:330px;overflow:auto}
@@ -114,10 +114,12 @@ h5.silk{grid-column:1/-1}
 .ms.hide{visibility:hidden}
 .tp .k{height:56px;font-size:18px}
 #kRec{color:var(--red)}
-/* bottom: pattern pads + trig keys */
-.trig{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:200px 1fr;gap:22px}
-.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:end}
-.lp{height:62px;border-radius:5px;background:#1d1e21;box-shadow:inset 0 2px 4px #000c,0 1px 0 #ffffff12;display:grid;place-items:center;font-size:13px;color:#5c5b58;font-weight:800;cursor:pointer}
+/* patterns sit in the left column under MODE, so the keys below get the full width of the panel */
+.pads{grid-column:1;grid-row:2/4;align-self:end;display:grid;grid-template-columns:repeat(4,1fr);gap:6px 8px;align-content:end}
+.pads h5{margin-bottom:1px}
+/* bottom: trig keys, or the KEYS piano / drum PADS */
+.trig{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:1fr}
+.lp{height:31px;border-radius:5px;background:#1d1e21;box-shadow:inset 0 2px 4px #000c,0 1px 0 #ffffff12;display:grid;place-items:center;font-size:13px;color:#5c5b58;font-weight:800;cursor:pointer}
 .lp.has{color:#bdbbb4}
 .lp.cur{background:radial-gradient(circle,#56e39a,#1f8f52);color:#06210f;box-shadow:0 0 12px #39e07a77}
 .lp.q{animation:blink .25s steps(2) infinite alternate;background:radial-gradient(circle,#ffb067,#c86410);color:#2b1406}
@@ -175,6 +177,27 @@ h5.silk{grid-column:1/-1}
 .kb .w.on{background:linear-gradient(#ff9a3c,#ffb26b 70%,#e86d0c);box-shadow:inset 0 -3px 0 #c45a08,0 0 22px #ff8a1f88}
 .kb .b.on{background:linear-gradient(#e86d0c,#ff9a3c 85%,#c45a08);box-shadow:inset 0 -2px 0 #a04a06,0 0 18px #ff8a1f99}
 .kb .on span{color:#4a2306}
+/* the range bar over the keys: a miniature of every octave; drag the lit window to slide the keyboard */
+.kbmap{display:none;position:relative;height:26px;margin-bottom:-10px;border-radius:6px 6px 0 0;background:#3a1310;box-shadow:0 1px 0 #ffffff12;overflow:hidden;touch-action:none;cursor:grab;z-index:1}
+#unit.keys .kbmap{display:block}
+#unit.keys .kb{border-radius:0 0 6px 6px}
+#unit.keys .kb::before{display:none}
+.kbmap i{position:absolute;top:3px;font-style:normal}
+.kbmap .mw{bottom:3px;background:#7d7b75;box-shadow:inset -1px 0 0 #2a0d0b}
+.kbmap .mb{height:55%;background:#222225;z-index:1}
+.kbmap .mw b{position:absolute;left:1px;bottom:0;font-size:8px;font-weight:700;color:#3c3a36;letter-spacing:0}
+.kbmap .nts u{position:absolute;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--org);box-shadow:0 0 4px #ff8a1f;z-index:2}
+.kbmap .win{position:absolute;top:0;bottom:0;z-index:3;border:2px solid var(--org);border-radius:6px;background:#ff8a1f30;box-shadow:0 0 10px #ff8a1f77,inset 0 0 8px #ff8a1f55;display:grid;place-items:center;transition:left .12s}
+.kbmap .win.drag{transition:none}
+.kbmap .win span{font-family:VT323,monospace;font-size:17px;line-height:1;color:#fff;background:#3a1310d9;padding:0 6px;border-radius:3px;pointer-events:none}
+/* EXPAND: the screen and knobs fold away and the keys (or pads) take their room; patterns, modes, REC and PLAY stay */
+#unit:not(.tall).big.keys,#unit:not(.tall).big.pads{grid-template-rows:34px 0 auto 1fr}
+#unit.big.keys .scr,#unit.big.keys .enc,#unit.big.pads .scr,#unit.big.pads .enc{display:none}
+#unit:not(.tall).big.keys .fn,#unit:not(.tall).big.pads .fn{grid-row:2/5}
+#unit:not(.tall).big.keys .pads,#unit:not(.tall).big.pads .pads{grid-row:2/5}
+#unit:not(.tall).big.keys .trk,#unit:not(.tall).big.keys .trig,#unit:not(.tall).big.pads .trk,#unit:not(.tall).big.pads .trig{grid-column:2/4}
+#unit.big .kb,#unit.big .dk{height:auto;flex:1}
+#unit.big .tgw{justify-content:stretch}
 /* PADS: on the Drum page the same KEYS key swaps the trig keys for 8 round drum pads laid out like a kit */
 .dkbar,.dk{display:none}
 #unit.pads .bars,#unit.pads .trigs{display:none}
@@ -216,7 +239,10 @@ h5.silk{grid-column:1/-1}
 #unit.tall .tp:nth-last-child(3){grid-column:6}
 #unit.tall .tp:nth-last-child(2){grid-column:7}
 #unit.tall .tp:nth-last-child(1){grid-column:8}
-#unit.tall .pads{grid-column:1/5;grid-row:6}
+#unit.tall .pads{grid-column:1/6;grid-row:6;align-self:center;grid-template-columns:repeat(8,1fr);gap:8px}
+#unit.tall .lp{height:46px}
+#unit.tall .pads .cl2{grid-column:span 4;grid-row:3;height:32px}
+#unit.tall.big.keys,#unit.tall.big.pads{grid-template-rows:34px 0 0 auto auto auto 1fr}
 #unit.tall .tgw{grid-column:1/-1;grid-row:7;justify-content:stretch}
 #unit.tall .bars{display:none}
 #unit.tall .trigs{flex:1;grid-template-columns:repeat(8,1fr);grid-auto-rows:1fr;gap:12px 9px}
@@ -269,14 +295,15 @@ h5.silk{grid-column:1/-1}
   <div class="scr"><canvas id="oled"></canvas></div>
   <div class="enc" id="enc"><h5 class="silk">Data entry · drag a knob</h5></div>
   <div class="trk" id="trk"></div>
+  <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5><div class="k clr cl2" id="kClrMode">CLEAR DRUMS</div><div class="k clr cl2" id="kClrAll">CLEAR ALL</div></div>
 
   <div class="trig">
-    <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5><div class="k clr cl2" id="kClrMode">CLEAR DRUMS</div><div class="k clr cl2" id="kClrAll">CLEAR ALL</div></div>
     <div class="tgw">
       <div class="bars silk"><div>1</div><div>2</div><div>3</div><div>4</div></div>
-      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
-      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
+      <div class="kbbar"><div class="k" id="kbDn">OCT −</div><span class="silk" id="kbRange"></span><div class="k" id="kbUp">OCT +</div><div class="k in" id="kbIn"></div><div class="k" id="kbFx">FX</div><div class="k" id="kbBig">EXPAND</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="kbHint"></span></div>
+      <div class="dkbar"><span class="silk" style="color:var(--silk)">Drum pads</span><div class="k in" id="dkVel"></div><div class="k" id="dkBig">EXPAND</div><span class="sc"><div class="k" data-st="-1">BACK</div><div class="k st" data-st="0"></div><div class="k" data-st="1">SKIP</div></span><span class="silk hint" id="dkHint"></span></div>
       <div class="trigs" id="trigs"></div>
+      <div class="kbmap" id="kbMap"></div>
       <div class="kb" id="kb"></div>
       <div class="dk" id="dk"></div>
     </div>
@@ -860,6 +887,7 @@ function fit() {
   const k = (tall ? kTall : kWide) * 0.995;
   unit.style.transform = `scale(${k}) translate(-50%,-50%)`;
   scaleK = k; sizeOled(); layoutPads();
+  if (kbShown()) buildKb();
 }
 let scaleK = 1;
 addEventListener('resize', fit);
@@ -1306,20 +1334,28 @@ const hasNotes = pt => pt.drums.some(r => r.some(Boolean)) || pt.mel.some(m => m
 function renderPads() { pads.forEach((d, i) => { d.className = 'lp' + (hasNotes(state.pats[i]) ? ' has' : '') + (i === state.pat ? ' cur' : '') + (i === queuedPat ? ' q' : ''); }); }
 
 /* ---------------- KEYS: on-screen piano for Bass, Lead and Pad ----------------
-   Two octaves from the key's root, starting at the track's OCT. Notes sound while a finger is down;
+   Three octaves (two on narrower panels) from the key's root, starting at the track's OCT; the range bar
+   over the keys slides that window through every octave. Notes sound while a finger is down;
    lower on a key plays louder. With REC lit and the loop playing, each note is written into the pattern,
    its start and end snapped to the 16 steps. */
 let take = false;                 // one undo step per recording take
 let lastMel = 1;
 const kbShown = () => !!state.keysOn && isMel();
 const inKey = () => state.key.scale !== 'Chromatic';
-const kbLow = () => { const m = 12 * (curMkit().oct + 1) + state.key.root; return [1, 3, 6, 8, 10].includes(mod(m, 12)) ? m - 1 : m; };
 const isBlack = m => [1, 3, 6, 8, 10].includes(mod(m, 12));
+const MAP_LO = 12, MAP_HI = 127;    // the range bar spans C0 to the top MIDI note
+// as many octaves as fit at a comfortable key width: 3 across the wide panel, 2 when EXPAND or the tall panel narrows it
+const kbOcts = () => clamp(Math.floor(($('kb').clientWidth || 986) / 330), 2, 3);
+const kbLowAt = o => { const m = 12 * (o + 1) + state.key.root; return isBlack(m) ? m - 1 : m; };
+const kbMaxOct = () => { let o = 0; while (o < 7 && kbLowAt(o + 1) + 12 * kbOcts() <= MAP_HI) o++; return o; };
+const kbOct = () => Math.min(curMkit().oct, kbMaxOct());
+const kbLow = () => kbLowAt(kbOct());
 const inScale = m => scaleIv().includes(mod(m - state.key.root, 12));
 const kbEls = new Map(), kbHeld = new Map(), kbGlow = new Map();
 let kbSig = '';
 function buildKb() {
-  const lo = kbLow(), hi = lo + 24 + (isBlack(lo + 24) ? 1 : 0);
+  const lo = kbLow(), hi = lo + 12 * kbOcts();
+  renderKbMap(lo, hi);
   const sig = [lo, hi, state.key.root, state.key.scale].join();
   if (sig === kbSig) return; kbSig = sig;
   const kb = $('kb'), W = [];
@@ -1343,6 +1379,54 @@ function renderKbBar() {
   const rec = liveRec && playing, h = $('kbHint');
   h.classList.toggle('rec', liveRec);
   h.textContent = rec ? '● Recording · notes snap to steps' : liveRec ? '● Step rec · hold keys for a chord' : 'Lower on a key = louder';
+}
+/* range bar: mini keys for C0-G9, dots where this track's notes are, and a window over the octaves on the piano */
+const mapW = []; for (let m = MAP_LO; m <= MAP_HI; m++) if (!isBlack(m)) mapW.push(m);
+const mapWW = 100 / mapW.length;
+const mapIdx = m => mapW.filter(x => x < m).length;
+const mapX = m => (mapIdx(m) + (isBlack(m) ? 0 : 0.5)) * mapWW;     // centre of key m, in %
+const mapWin = o => { const lo = kbLowAt(o); return [mapIdx(lo) * mapWW, (mapIdx(lo + 12 * kbOcts()) + 1) * mapWW]; };
+let kbDrag = null;
+function buildKbMap() {
+  let html = '';
+  for (let m = MAP_LO; m <= MAP_HI; m++) html += isBlack(m)
+    ? `<i class="mb" style="left:${(mapIdx(m) - 0.3) * mapWW}%;width:${mapWW * 0.6}%"></i>`
+    : `<i class="mw" style="left:${mapIdx(m) * mapWW}%;width:${mapWW}%">${mod(m, 12) === 0 ? '<b>C' + (m / 12 - 1) + '</b>' : ''}</i>`;
+  $('kbMap').innerHTML = html + '<div class="nts" id="kbNts"></div><div class="win" id="kbWin"><span id="kbWinL"></span></div>';
+}
+function renderKbMap(lo, hi) {
+  const w = $('kbWin'), [l, r] = mapWin(kbOct());
+  if (!kbDrag) w.style.left = l + '%';
+  w.style.width = (r - l) + '%';
+  $('kbWinL').textContent = noteName(lo) + '–' + noteName(hi);
+  const seen = new Set(curMel().notes.map(n => snap(n.r) + state.key.root).filter(m => m >= MAP_LO && m <= MAP_HI));
+  $('kbNts').innerHTML = [...seen].map(m => `<u style="left:${mapX(m)}%"></u>`).join('');
+}
+function wireKbMap() {
+  const map = $('kbMap');
+  // grab the window where it is touched, or touch anywhere else on the bar to bring it there
+  const move = x => {
+    const left = clamp(x - kbDrag.off, 0, 100 - kbDrag.w);
+    $('kbWin').style.left = left + '%';
+    let best = kbOct(), bd = 1e9;
+    for (let o = 0; o <= kbMaxOct(); o++) { const d = Math.abs(mapWin(o)[0] - left); if (d < bd) { bd = d; best = o; } }
+    if (best !== kbOct()) { kbAllUp(); curMkit().oct = best; rollOff = 0; refresh(); }
+  };
+  const xOf = e => { const r = map.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 100; };
+  map.addEventListener('pointerdown', e => {
+    e.preventDefault(); const x = xOf(e), [l, r] = mapWin(kbOct());
+    kbDrag = { id: e.pointerId, off: x >= l && x <= r ? x - l : (r - l) / 2, w: r - l };
+    $('kbWin').classList.add('drag');
+    try { map.setPointerCapture(e.pointerId); } catch (err) {}
+    move(x);
+  });
+  map.addEventListener('pointermove', e => { if (kbDrag && e.pointerId === kbDrag.id) move(xOf(e)); });
+  const end = e => {
+    if (!kbDrag || e.pointerId !== kbDrag.id) return;
+    kbDrag = null; $('kbWin').classList.remove('drag');
+    $('kbWin').style.left = mapWin(kbOct())[0] + '%'; save();
+  };
+  map.addEventListener('pointerup', end); map.addEventListener('pointercancel', end);
 }
 const kbKeyAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#kb [data-m]') : null; };
 function kbDown(id, el, e) {
@@ -1395,8 +1479,11 @@ function wireKb() {
   });
   const up = e => kbUp(e.pointerId);
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
-  press($('kbDn'), () => { const mk = curMkit(); if (mk.oct > 0) { kbAllUp(); mk.oct--; rollOff = 0; save(); refresh(); } });
-  press($('kbUp'), () => { const mk = curMkit(); if (mk.oct < 6) { kbAllUp(); mk.oct++; rollOff = 0; save(); refresh(); } });
+  press($('kbDn'), () => { const mk = curMkit(); if (kbOct() > 0) { kbAllUp(); mk.oct = kbOct() - 1; rollOff = 0; save(); refresh(); } });
+  press($('kbUp'), () => { const mk = curMkit(); if (kbOct() < kbMaxOct()) { kbAllUp(); mk.oct = kbOct() + 1; rollOff = 0; save(); refresh(); } });
+  // EXPAND: the keys (or drum pads) take over the screen and knob area until it is pressed again
+  const big = () => { kbAllUp(); state.kbBig = !state.kbBig; save(); refresh(); };
+  press($('kbBig'), big); press($('dkBig'), big);
   // ALL 12 NOTES switches the scale to Chromatic so every key plays as heard; IN KEY goes back to the scale before
   press($('kbIn'), () => {
     kbAllUp();
@@ -1627,6 +1714,9 @@ function refresh() {
   unit.classList.toggle('keys', keys);
   const padsNew = dpads && !unit.classList.contains('pads');
   unit.classList.toggle('pads', dpads);
+  const bigNow = !!state.kbBig && (keys || dpads);
+  if (bigNow !== unit.classList.contains('big')) { unit.classList.toggle('big', bigNow); fit(); }
+  $('kbBig').classList.toggle('lit', bigNow); $('dkBig').classList.toggle('lit', bigNow);
   $('kKeys').classList.toggle('lit', !!state.keysOn);
   $('kKeys').textContent = mel ? 'KEYS' : 'PADS';
   $('kClrMode').textContent = 'CLEAR ' + pageName();
@@ -1659,7 +1749,7 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); buildDrumPads(); wire(); wireKb(); wireDrumPads();
+buildKnobs(); buildTrackKeys(); buildTrigs(); buildPads(); buildDrumPads(); buildKbMap(); wire(); wireKb(); wireKbMap(); wireDrumPads();
 if (isMel()) lastMel = state.mode;
 fit(); refresh();
 setTimeout(fit, 300);
