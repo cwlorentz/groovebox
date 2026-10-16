@@ -55,6 +55,14 @@ h5.silk{grid-column:1/-1}
 .fn h5.gap{margin-top:3px}
 /* OLED */
 .scr{grid-column:2;grid-row:2;background:#151619;border-radius:8px;padding:12px;box-shadow:inset 0 2px 4px #000c,0 1px 0 #ffffff14}
+.scr .zbar{display:none}
+/* BIG SCREEN: the screen covers the panel so its steps and notes are big enough to tap */
+#unit.zoom .scr{position:absolute;grid-area:auto!important;left:16px;right:16px;top:58px;bottom:16px;z-index:6;display:flex!important;flex-direction:column;gap:10px;background:#1b1c20;box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff1a}
+#unit.zoom #oled{flex:1;min-height:0;height:auto}
+#unit.zoom .scr .zbar{display:flex;gap:10px;justify-content:flex-end}
+#unit.zoom .scr .zbar .k{height:52px;min-width:110px;padding:0 16px;font-size:14px}
+#unit.zoom .scr .zbar .sp{flex:1}
+#unit.zoom #kZoom{color:#ffcf9e}
 #oled{width:100%;height:100%;display:block;background:var(--oled);border-radius:3px;box-shadow:inset 0 0 30px #9fdcff10}
 /* encoders */
 .enc{grid-column:3;grid-row:2;display:grid;grid-template-columns:repeat(4,1fr);gap:8px 10px;align-content:start}
@@ -243,6 +251,7 @@ h5.silk{grid-column:1/-1}
 #unit.tall{width:760px;grid-template-columns:repeat(8,1fr);grid-template-rows:34px minmax(250px,3fr) auto auto auto auto minmax(220px,2fr);gap:14px 10px}
 #unit.tall .logo span{display:none}
 #unit.tall .jacks{gap:16px}
+#unit.tall #kZoom{font-size:0}#unit.tall #kZoom::after{content:"ZOOM";font-size:9px}
 #unit.tall .scr{grid-column:1/-1;grid-row:2}
 #unit.tall .enc{grid-column:1/-1;grid-row:3;grid-template-columns:repeat(8,1fr);gap:4px 6px}
 #unit.tall .fn{grid-column:1/-1;grid-row:4;grid-template-columns:repeat(6,1fr);grid-template-rows:auto 42px 42px;grid-auto-flow:column;gap:8px 12px;padding-top:0}
@@ -294,7 +303,7 @@ h5.silk{grid-column:1/-1}
       <div class="jk"><div class="led" id="lIn"></div><span class="silk">MIDI In</span></div>
       <div class="jk"><div class="led" id="lOut"></div><span class="silk">MIDI Out</span></div>
       <div class="jk"><div class="led" id="lClock"></div><span class="silk">Clock</span></div>
-      <div class="k mini" id="kKeys">KEYS</div><div class="k mini" id="kPre">PRESETS</div><div class="k mini" id="kFs">FULL SCREEN</div>
+      <div class="k mini" id="kZoom">BIG SCREEN</div><div class="k mini" id="kKeys">KEYS</div><div class="k mini" id="kPre">PRESETS</div><div class="k mini" id="kFs">FULL SCREEN</div>
     </div>
   </div>
 
@@ -310,7 +319,7 @@ h5.silk{grid-column:1/-1}
     <div class="k" data-mode="1">LEAD</div><div class="k" data-mode="2">PAD</div>
   </div>
 
-  <div class="scr"><canvas id="oled"></canvas></div>
+  <div class="scr"><canvas id="oled"></canvas><div class="zbar"><div class="k" id="zPlay">▶ PLAY</div><div class="sp"></div><div class="k" id="zUp">▲ HIGHER</div><div class="k" id="zDn">▼ LOWER</div><div class="k" id="zX">DONE</div></div></div>
   <div class="enc" id="enc"><h5 class="silk">Data entry · drag a knob</h5></div>
   <div class="trk" id="trk"></div>
   <div class="pads" id="pads"><h5 class="silk">Patterns · switch on next bar</h5><div class="k clr cl2" id="kClrMode">CLEAR DRUMS</div><div class="k clr cl2" id="kClrAll">CLEAR ALL</div></div>
@@ -1810,6 +1819,12 @@ function wire() {
     kbAllUp(); stepReset(); take = false; selNote = null; curNoteR = null; rollOff = 0; save(); refresh();
   }));
   press($('kPlay'), () => { if (playing) stop(); else start(); });
+  // BIG SCREEN blows the screen up over the panel; HIGHER and LOWER scroll the notes, DONE puts it back
+  const zoom = on => { $('unit').classList.toggle('zoom', on); sizeOled(); refresh(); };
+  press($('kZoom'), () => { takeShift(); kbAllUp(); zoom(!$('unit').classList.contains('zoom')); });
+  press($('zX'), () => zoom(false));
+  press($('zPlay'), () => { if (playing) stop(); else start(); });
+  press($('zUp'), () => scrollNotes(3)); press($('zDn'), () => scrollNotes(-3));
   press($('kStop'), () => { if (playing) stop(); else { queuedPat = -1; refresh(); } });
   // REC with the loop playing records live; with it stopped, each key is written on the next step
   press($('kRec'), () => {
@@ -1844,6 +1859,8 @@ function leds() {
 }
 function refresh() {
   followSel();
+  $('zPlay').textContent = playing ? '■ STOP' : '▶ PLAY';
+  $('zUp').style.visibility = $('zDn').style.visibility = isMel() ? '' : 'hidden';
   const mel = isMel();
   document.querySelectorAll('[data-mode]').forEach(k => k.classList.toggle('lit', String(state.mode) === k.dataset.mode));
   $('kScale').classList.toggle('lit', scaleMode);
