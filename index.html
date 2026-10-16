@@ -80,16 +80,16 @@ h5.silk{grid-column:1/-1}
 #entry .pad .k{height:52px;font-size:18px}
 #entry .pad .k.wide{grid-column:span 2}
 #entry .pad .k.ok{color:var(--grn)}
-#presets,#sounds{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#0e0e10b3;border-radius:14px}
-#presets[hidden],#sounds[hidden]{display:none}
-#presets .box,#sounds .box{width:660px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:12px}
-#presets .disp,#sounds .disp{background:#05070a;border-radius:4px;padding:8px 14px;font-family:VT323,monospace;color:#e9f6ff;font-size:22px;display:flex;justify-content:space-between;gap:12px}
-#presets .disp small,#sounds .disp small{font-size:18px;color:#8fa2ae}
+#presets,#sounds,#keyset{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#0e0e10b3;border-radius:14px}
+#presets[hidden],#sounds[hidden],#keyset[hidden]{display:none}
+#presets .box,#sounds .box,#keyset .box{width:660px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:12px}
+#presets .disp,#sounds .disp,#keyset .disp{background:#05070a;border-radius:4px;padding:8px 14px;font-family:VT323,monospace;color:#e9f6ff;font-size:22px;display:flex;justify-content:space-between;gap:12px}
+#presets .disp small,#sounds .disp small,#keyset .disp small{font-size:18px;color:#8fa2ae}
 #presets .list,#sounds .list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:430px;overflow:auto}
 #presets .list .k,#sounds .list .k{height:58px;flex-direction:column;gap:3px;font-size:13px}
 #presets .list .k small,#sounds .list .k small{font-size:9.5px;font-weight:500;letter-spacing:.08em;color:var(--silk2)}
-#presets .row,#sounds .row{display:flex;justify-content:flex-end}
-#presets .row .k,#sounds .row .k{height:44px;width:120px;font-size:12px}
+#presets .row,#sounds .row,#keyset .row{display:flex;justify-content:flex-end}
+#presets .row .k,#sounds .row .k,#keyset .row .k{height:44px;width:120px;font-size:12px}
 #confirm{position:absolute;inset:0;z-index:6;display:grid;place-items:center;background:#0e0e10cc;border-radius:14px}
 #confirm[hidden]{display:none}
 #confirm .box{width:440px;max-width:calc(100% - 40px);padding:18px;border-radius:10px;background:linear-gradient(#36373c,#27282c);box-shadow:0 20px 50px #000c,inset 0 1px 0 #ffffff26;display:flex;flex-direction:column;gap:10px}
@@ -160,6 +160,15 @@ h5.silk{grid-column:1/-1}
 .kbbar .snd{min-width:112px}
 #sounds .list .k.cur{color:#ffcf9e;box-shadow:0 2px 0 #121214,0 0 14px #ff8a1f55,inset 0 0 10px #ff8a1f55}
 #sounds .list .k.wait{animation:blink .25s steps(2) infinite alternate}
+#keyset .lbl{font-size:11px;letter-spacing:.14em;color:var(--silk2);margin-bottom:-4px}
+#keyset .list{display:grid;gap:8px}
+#keyset #ksRoots{grid-template-columns:repeat(6,1fr)}
+#keyset #ksScales{grid-template-columns:repeat(5,1fr)}
+#keyset .list .k{height:50px;font-size:15px}
+#keyset #ksScales .k{font-size:12px}
+#keyset .list .k.cur{color:#ffcf9e;box-shadow:0 2px 0 #121214,0 0 14px #ff8a1f55,inset 0 0 10px #ff8a1f55}
+#unit.tall #keyset #ksRoots{grid-template-columns:repeat(4,1fr)}
+#unit.tall #keyset #ksScales{grid-template-columns:repeat(2,1fr)}
 #sounds .credit{margin:0;font-size:10px;line-height:1.4;color:var(--silk2)}
 .kbbar #kbRange{font-family:VT323,monospace;font-size:20px;letter-spacing:.04em;color:#c9d6de;min-width:96px;text-align:center;text-transform:none}
 .kbbar .hint{margin-left:auto;min-width:0;white-space:normal;text-align:right;line-height:1.35;max-height:34px;overflow:hidden}
@@ -274,6 +283,7 @@ h5.silk{grid-column:1/-1}
 <div id="stage"><div id="unit">
   <div id="confirm" hidden><div class="box"><div class="disp"><span id="cfTitle"></span></div><p id="cfText"></p><p>UNDO brings it back.</p><div class="row"><div class="k" id="cfNo">CANCEL</div><div class="k clr" id="cfYes"></div></div></div></div>
   <div id="sounds" hidden><div class="box"><div class="disp"><span>SOUND</span><small id="sndTo"></small></div><div class="list" id="sndList"></div><p class="credit">Recordings: Salamander Grand Piano (Yamaha C5) by Alexander Holm, CC BY 3.0 · FluidR3 GM by Frank Wen, MIT. Each one downloads once, then works offline.</p><div class="row"><div class="k" id="sndX">DONE</div></div></div></div>
+  <div id="keyset" hidden><div class="box"><div class="disp"><span>KEY &amp; SCALE</span><small id="ksNow"></small></div><div class="lbl">KEY</div><div class="list" id="ksRoots"></div><div class="lbl">SCALE</div><div class="list" id="ksScales"></div><div class="row"><div class="k" id="ksX">DONE</div></div></div></div>
   <div id="presets" hidden><div class="box"><div class="disp"><span>PRESET BEATS</span><small id="preTo"></small></div><div class="list" id="preList"></div><div class="row"><div class="k" id="preX">CANCEL</div></div></div></div>
   <div id="entry" hidden><div class="box"><div class="disp"><div class="t"><span id="enName"></span><span id="enRange"></span></div><div class="v" id="enVal"></div></div><div id="enKeys"></div></div></div>
   <div class="screw" style="left:8px;top:8px"></div><div class="screw" style="right:8px;top:8px"></div><div class="screw" style="left:8px;bottom:8px"></div><div class="screw" style="right:8px;bottom:8px"></div>
@@ -1289,6 +1299,26 @@ function openSounds() {
   list.querySelectorAll('.k').forEach(k => press(k, () => pickSound(k.dataset.id, k)));
   $('sounds').hidden = false;
 }
+/* KEY & SCALE sheet, opened from the IN KEY button above the piano */
+function openKeyset() {
+  takeShift(); if (entry) closeEntry(); kbAllUp();
+  $('ksRoots').innerHTML = NOTE_NAMES.map((n, i) => `<div class="k" data-r="${i}">${n}</div>`).join('');
+  $('ksScales').innerHTML = SCALES.map(([n]) => `<div class="k" data-s="${n}">${n === 'Chromatic' ? 'ALL 12 NOTES' : n.toUpperCase()}</div>`).join('');
+  $('ksRoots').querySelectorAll('.k').forEach(k => press(k, () => pickKey(+k.dataset.r, null)));
+  $('ksScales').querySelectorAll('.k').forEach(k => press(k, () => pickKey(null, k.dataset.s)));
+  markKeyset(); $('keyset').hidden = false;
+}
+function markKeyset() {
+  $('ksRoots').querySelectorAll('.k').forEach(k => k.classList.toggle('cur', +k.dataset.r === state.key.root));
+  $('ksScales').querySelectorAll('.k').forEach(k => k.classList.toggle('cur', k.dataset.s === state.key.scale));
+  $('ksNow').textContent = inKey() ? NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase() : 'ALL 12 NOTES';
+}
+function pickKey(root, scale) {
+  if (root !== null) state.key.root = root;
+  if (scale !== null) { if (scale === 'Chromatic' && inKey()) state.prevScale = state.key.scale; state.key.scale = scale; }
+  rollOff = 0; save(); refresh(); markKeyset();
+}
+function closeKeyset() { $('keyset').hidden = true; }
 function closeSounds() { $('sounds').hidden = true; }
 function pickSound(id, el) {
   const j = state.mode, S = SOUNDS.find(x => x.id === id);
@@ -1500,7 +1530,7 @@ function buildKb() {
 function renderKbBar() {
   const snd = soundOf(state.mode);
   $('kbSnd').textContent = soundInfo(state.mode).key; $('kbSnd').classList.toggle('lit', snd !== 'synth');
-  $('kbIn').textContent = inKey() ? 'IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
+  $('kbIn').textContent = inKey() ? 'KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.slice(0, 5).toUpperCase() : 'ALL 12 NOTES';
   $('kbIn').classList.toggle('lit', inKey());
   const rec = liveRec && playing, h = $('kbHint');
   h.classList.toggle('rec', liveRec);
@@ -1614,13 +1644,10 @@ function wireKb() {
   // EXPAND: the keys (or drum pads) take over the screen and knob area until it is pressed again
   const big = () => { kbAllUp(); state.kbBig = !state.kbBig; save(); refresh(); };
   press($('kbBig'), big); press($('dkBig'), big);
-  // ALL 12 NOTES switches the scale to Chromatic so every key plays as heard; IN KEY goes back to the scale before
-  press($('kbIn'), () => {
-    kbAllUp();
-    if (inKey()) { state.prevScale = state.key.scale; state.key.scale = 'Chromatic'; flash('ALL 12 NOTES'); }
-    else { state.key.scale = state.prevScale && state.prevScale !== 'Chromatic' ? state.prevScale : 'Major'; flash('IN KEY: ' + NOTE_NAMES[state.key.root] + ' ' + state.key.scale.toUpperCase()); }
-    rollOff = 0; save(); refresh();
-  });
+  // IN KEY opens the KEY & SCALE sheet: pick any of the 12 keys and any scale, or ALL 12 NOTES to play every key as heard
+  press($('kbIn'), openKeyset);
+  press($('ksX'), closeKeyset);
+  $('keyset').addEventListener('pointerdown', e => { if (e.target.id === 'keyset') { e.preventDefault(); closeKeyset(); } });
   // FX turns the lower four knobs into effects for this synth track; each press moves to the next set, then off:
   // ECHO (echo, time, reverb, release) > FUNK (wah, drive, sub, glide) > SPACE (wobble, ring, zap, crush)
   press($('kbFx'), () => { fxMode = (fxMode + 1) % 4; scaleMode = false; if (fxMode) flash(FX_PAGES[fxMode] + ' · ' + MEL[state.mode].name.toUpperCase()); refresh(); });
