@@ -183,6 +183,7 @@ h5.silk{grid-column:1/-1}
 .kbbar .hint.rec{color:#ff7a6e}
 .kb{position:relative;height:198px;border-radius:6px;background:#141416;box-shadow:inset 0 2px 5px #000c,0 1px 0 #ffffff12;overflow:hidden;touch-action:none}
 .kb::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;z-index:3;background:linear-gradient(#5a1d18,#3a1310);box-shadow:0 1px 3px #000a;pointer-events:none}
+.kb .kbs{position:absolute;top:0;bottom:0;left:0;will-change:transform}
 .kb .w,.kb .b{position:absolute;top:0;cursor:pointer}
 /* --oc is the key's octave colour (OCT_COLS): a lip along the front of the white keys, and the tint of the range bar */
 .kb .w{bottom:3px;border-radius:0 0 6px 6px;background:linear-gradient(#d6d4cd,#eeece6 70%,#cfcdc6);box-shadow:inset 0 -9px 0 var(--oc,#b3b1aa),0 2px 3px #0009}
@@ -210,8 +211,7 @@ h5.silk{grid-column:1/-1}
 .kbmap .mb{height:55%;background:#222225;z-index:1}
 .kbmap .mw b{position:absolute;left:1px;bottom:0;font-size:8px;font-weight:700;color:#3c3a36;letter-spacing:0}
 .kbmap .nts u{position:absolute;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--org);box-shadow:0 0 4px #ff8a1f;z-index:2}
-.kbmap .win{position:absolute;top:0;bottom:0;z-index:3;border:2px solid var(--org);border-radius:6px;background:#ff8a1f30;box-shadow:0 0 10px #ff8a1f77,inset 0 0 8px #ff8a1f55;display:grid;place-items:center;transition:left .12s}
-.kbmap .win.drag{transition:none}
+.kbmap .win{position:absolute;top:0;bottom:0;z-index:3;border:2px solid var(--org);border-radius:6px;background:#ff8a1f30;box-shadow:0 0 10px #ff8a1f77,inset 0 0 8px #ff8a1f55;display:grid;place-items:center}
 .kbmap .win span{font-family:VT323,monospace;font-size:17px;line-height:1;color:#fff;background:#3a1310d9;padding:0 6px;border-radius:3px;pointer-events:none}
 /* EXPAND: the screen and knobs fold away and the keys (or pads) take their room; patterns, modes, REC and PLAY stay */
 #unit:not(.tall).big.keys,#unit:not(.tall).big.pads{grid-template-rows:34px 0 auto 1fr}
@@ -1592,25 +1592,75 @@ const kbLow = () => kbLowAt(kbOct());
 const inScale = m => scaleIv().includes(mod(m - state.key.root, 12));
 const kbEls = new Map(), kbHeld = new Map(), kbGlow = new Map();
 let kbSig = '';
+/* range bar: mini keys for A0-C8, dots where this track's notes are, and a window over the part on the piano */
+const mapW = []; for (let m = MAP_LO; m <= MAP_HI; m++) if (!isBlack(m)) mapW.push(m);
+const mapWW = 100 / mapW.length;
+const mapIdx = m => mapW.filter(x => x < m).length;
+const mapX = m => (mapIdx(m) + (isBlack(m) ? 0 : 0.5)) * mapWW;     // centre of key m, in %
+/* the piano is all 88 keys on one strip that slides under its frame. kbPos is the white key at the left edge
+   (0 = A0) and can sit part way across a key, so dragging the range bar moves the keys with the finger */
+const kbVis = () => 7 * kbOcts() + 1;                             // white keys across the frame
+const kbMaxPos = () => mapW.length - kbVis();
+const kbHome = () => clamp(mapIdx(kbLow()), 0, kbMaxPos());      // where the track's OCT puts the frame
+let kbPos = 0, kbView = null;    // which track, OCT and key the strip last showed: a new OCT glides there, a new track cuts
 function buildKb() {
-  const lo = kbLow(), hi = lo + 12 * kbOcts();
-  renderKbMap(lo, hi);
-  const sig = [lo, hi, state.key.root, state.key.scale].join();
-  if (sig === kbSig) return; kbSig = sig;
-  const kb = $('kb'), W = [];
-  for (let m = lo; m <= hi; m++) if (!isBlack(m)) W.push(m);
-  const ww = 100 / W.length;
-  let html = '';
-  for (let m = lo; m <= hi; m++) {
-    const black = isBlack(m), cls = (black ? 'b' : 'w') + (mod(m - state.key.root, 12) === 0 ? ' root' : '') + (inScale(m) ? '' : ' off');
-    const left = black ? `calc(${W.filter(x => x < m).length * ww}% - ${ww * 0.3}%)` : `calc(${W.indexOf(m) * ww}% + 2px)`;
-    const width = black ? `${ww * 0.6}%` : `calc(${ww}% - 4px)`;
-    html += `<div class="${cls}" data-m="${m}" style="left:${left};width:${width};--oc:${octCol(m)}">${black ? (mod(m - state.key.root, 12) === 0 ? '<span></span>' : '') : '<span>' + (mod(m, 12) === 0 || mod(m - state.key.root, 12) === 0 ? noteName(m) : NOTE_NAMES[mod(m, 12)]) + '</span>'}</div>`;
+  const mk = curMkit(), sig = [state.key.root, state.key.scale, kbOcts()].join();
+  if (sig !== kbSig) {
+    kbSig = sig;
+    const ww = 100 / mapW.length;
+    let html = '';
+    for (let m = MAP_LO; m <= MAP_HI; m++) {
+      const black = isBlack(m), cls = (black ? 'b' : 'w') + (mod(m - state.key.root, 12) === 0 ? ' root' : '') + (inScale(m) ? '' : ' off');
+      const left = black ? `calc(${mapIdx(m) * ww}% - ${ww * 0.3}%)` : `calc(${mapIdx(m) * ww}% + 2px)`;
+      const width = black ? `${ww * 0.6}%` : `calc(${ww}% - 4px)`;
+      html += `<div class="${cls}" data-m="${m}" style="left:${left};width:${width};--oc:${octCol(m)}">${black ? (mod(m - state.key.root, 12) === 0 ? '<span></span>' : '') : '<span>' + (mod(m, 12) === 0 || mod(m - state.key.root, 12) === 0 ? noteName(m) : NOTE_NAMES[mod(m, 12)]) + '</span>'}</div>`;
+    }
+    const kb = $('kb');
+    kb.innerHTML = `<div class="kbs" id="kbS" style="width:${mapW.length / kbVis() * 100}%">${html}</div>`;
+    kbEls.clear();
+    kb.querySelectorAll('[data-m]').forEach(el => kbEls.set(+el.dataset.m, el));
+    for (const h of kbHeld.values()) if (h.m != null && kbEls.has(h.m)) kbEls.get(h.m).classList.add('on');
   }
-  kb.innerHTML = html; kbEls.clear();
-  kb.querySelectorAll('[data-m]').forEach(el => kbEls.set(+el.dataset.m, el));
-  for (const h of kbHeld.values()) if (h.m != null && kbEls.has(h.m)) kbEls.get(h.m).classList.add('on');
+  const view = { j: state.mode, oct: mk.oct, root: state.key.root };
+  if (!kbView || kbView.j !== view.j) { kbStop(); kbPos = mk.kbAt != null ? mk.kbAt : kbHome(); }
+  else if (kbView.oct !== view.oct || kbView.root !== view.root) kbGlide(kbHome());
+  kbView = view;
+  kbPos = clamp(kbPos, 0, kbMaxPos());
+  applyKbPos(); renderKbMap();
+}
+function applyKbPos() {
+  const s = $('kbS'); if (!s) return;
+  s.style.transform = `translateX(${-kbPos / mapW.length * 100}%)`;
+  const w = $('kbWin'); w.style.left = kbPos * mapWW + '%'; w.style.width = kbVis() * mapWW + '%';
+  const i = Math.round(kbPos), lo = mapW[i], hi = mapW[Math.min(mapW.length - 1, i + kbVis() - 1)];
+  $('kbWinL').textContent = noteName(lo) + '–' + noteName(hi);
   $('kbRange').textContent = noteName(lo) + ' – ' + noteName(hi);
+}
+/* motion: while a finger is on the range bar the keys ease after it, OCT −/+ glides there, and a flick coasts to a stop */
+let kbRaf = 0, kbT = 0, kbGoal = null, kbVel = 0, kbDrag = null;
+function kbTick(t) {
+  const dt = kbT ? Math.min(50, t - kbT) : 16.7, f = dt / 16.7, max = kbMaxPos(); kbT = t;
+  if (kbGoal != null) {
+    kbPos += (kbGoal - kbPos) * (1 - Math.pow(kbDrag ? 0.4 : 0.78, f));
+    if (!kbDrag && Math.abs(kbGoal - kbPos) < 0.01) { kbPos = kbGoal; kbGoal = null; }
+  } else if (kbVel) {
+    kbPos += kbVel * dt; kbVel *= Math.pow(0.94, f);
+    if (kbPos <= 0 || kbPos >= max || Math.abs(kbVel) < 0.0005) kbVel = 0;
+  }
+  kbPos = clamp(kbPos, 0, max); applyKbPos();
+  if (kbDrag || kbGoal != null || kbVel) kbRaf = requestAnimationFrame(kbTick);
+  else { kbRaf = 0; kbT = 0; kbSettle(); }
+}
+const kbRun = () => { if (!kbRaf) { kbT = 0; kbRaf = requestAnimationFrame(kbTick); } };
+function kbStop() { cancelAnimationFrame(kbRaf); kbRaf = 0; kbT = 0; kbGoal = null; kbVel = 0; }
+function kbGlide(p) { kbVel = 0; kbGoal = clamp(p, 0, kbMaxPos()); kbRun(); }
+// once the keys stop, keep the spot for this track and set its OCT to the nearest octave (the step roll follows OCT)
+function kbSettle() {
+  const mk = curMkit(); mk.kbAt = kbPos;
+  let best = kbOct(), bd = 1e9;
+  for (let o = 0; o <= kbMaxOct(); o++) { const d = Math.abs(mapIdx(kbLowAt(o)) - kbPos); if (d < bd) { bd = d; best = o; } }
+  if (best !== kbOct()) { mk.oct = best; rollOff = 0; kbView = { j: state.mode, oct: best, root: state.key.root }; refresh(); }
+  save();
 }
 function renderKbBar() {
   const snd = soundOf(state.mode);
@@ -1621,13 +1671,6 @@ function renderKbBar() {
   h.classList.toggle('rec', liveRec);
   h.textContent = rec ? '● Recording · notes snap to steps' : liveRec ? '● Step rec · hold keys for a chord' : 'Lower on a key = louder';
 }
-/* range bar: mini keys for C0-G9, dots where this track's notes are, and a window over the octaves on the piano */
-const mapW = []; for (let m = MAP_LO; m <= MAP_HI; m++) if (!isBlack(m)) mapW.push(m);
-const mapWW = 100 / mapW.length;
-const mapIdx = m => mapW.filter(x => x < m).length;
-const mapX = m => (mapIdx(m) + (isBlack(m) ? 0 : 0.5)) * mapWW;     // centre of key m, in %
-const mapWin = o => { const lo = kbLowAt(o); return [mapIdx(lo) * mapWW, (mapIdx(lo + 12 * kbOcts()) + 1) * mapWW]; };
-let kbDrag = null;
 function buildKbMap() {
   let html = '';
   for (let m = MAP_LO; m <= MAP_HI; m++) html += isBlack(m)
@@ -1635,37 +1678,35 @@ function buildKbMap() {
     : `<i class="mw" style="left:${mapIdx(m) * mapWW}%;width:${mapWW}%;--oc:${octCol(m)}">${mod(m, 12) === 0 ? '<b>C' + (m / 12 - 1) + '</b>' : ''}</i>`;
   $('kbMap').innerHTML = html + '<div class="nts" id="kbNts"></div><div class="win" id="kbWin"><span id="kbWinL"></span></div>';
 }
-function renderKbMap(lo, hi) {
-  const w = $('kbWin'), [l, r] = mapWin(kbOct());
-  if (!kbDrag) w.style.left = l + '%';
-  w.style.width = (r - l) + '%';
-  $('kbWinL').textContent = noteName(lo) + '–' + noteName(hi);
+function renderKbMap() {
   const seen = new Set(curMel().notes.map(n => snap(n.r) + state.key.root).filter(m => m >= MAP_LO && m <= MAP_HI));
   $('kbNts').innerHTML = [...seen].map(m => `<u style="left:${mapX(m)}%"></u>`).join('');
 }
 function wireKbMap() {
   const map = $('kbMap');
-  // grab the window where it is touched, or touch anywhere else on the bar to bring it there
-  const move = x => {
-    const left = clamp(x - kbDrag.off, 0, 100 - kbDrag.w);
-    $('kbWin').style.left = left + '%';
-    let best = kbOct(), bd = 1e9;
-    for (let o = 0; o <= kbMaxOct(); o++) { const d = Math.abs(mapWin(o)[0] - left); if (d < bd) { bd = d; best = o; } }
-    if (best !== kbOct()) { kbAllUp(); curMkit().oct = best; rollOff = 0; refresh(); }
+  // grab the window where it is touched and slide it, or touch anywhere else on the bar to glide it there
+  const keyOf = e => { const r = map.getBoundingClientRect(); return (e.clientX - r.left) / r.width * mapW.length; };
+  const aim = (e, k) => {
+    kbGoal = clamp(k - kbDrag.off, 0, kbMaxPos());
+    const now = performance.now(); kbDrag.hist.push([now, kbGoal]);
+    while (kbDrag.hist.length > 2 && now - kbDrag.hist[0][0] > 90) kbDrag.hist.shift();
   };
-  const xOf = e => { const r = map.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 100; };
   map.addEventListener('pointerdown', e => {
-    e.preventDefault(); const x = xOf(e), [l, r] = mapWin(kbOct());
-    kbDrag = { id: e.pointerId, off: x >= l && x <= r ? x - l : (r - l) / 2, w: r - l };
-    $('kbWin').classList.add('drag');
+    e.preventDefault(); const k = keyOf(e), inWin = k >= kbPos && k <= kbPos + kbVis();
+    kbDrag = { id: e.pointerId, off: inWin ? k - kbPos : kbVis() / 2, hist: [] };
+    $('kbWin').classList.add('drag'); kbVel = 0;
     try { map.setPointerCapture(e.pointerId); } catch (err) {}
-    move(x);
+    aim(e, k); kbRun();
   });
-  map.addEventListener('pointermove', e => { if (kbDrag && e.pointerId === kbDrag.id) move(xOf(e)); });
+  map.addEventListener('pointermove', e => { if (kbDrag && e.pointerId === kbDrag.id) aim(e, keyOf(e)); });
   const end = e => {
     if (!kbDrag || e.pointerId !== kbDrag.id) return;
+    const h = kbDrag.hist, a = h[0], b = h[h.length - 1], now = performance.now();
     kbDrag = null; $('kbWin').classList.remove('drag');
-    $('kbWin').style.left = mapWin(kbOct())[0] + '%'; save();
+    // a flick (still moving as the finger lifts) keeps going and slows down
+    const v = h.length > 1 && now - b[0] < 60 && b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) : 0;
+    if (Math.abs(v) > 0.004) { kbPos = kbGoal; kbGoal = null; kbVel = v; }
+    kbRun();
   };
   map.addEventListener('pointerup', end); map.addEventListener('pointercancel', end);
 }
