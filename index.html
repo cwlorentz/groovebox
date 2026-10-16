@@ -1123,10 +1123,10 @@ function drawOled() {
     if (off[0]) og.fillText('▲' + off[0] + ' MORE', 12, gy - 4);
     if (off[1]) og.fillText('▼' + off[1] + ' MORE', 12, gy + rows * rh + 5);
   }
-  // big screen: a bright line between beats (every 4 steps)
+  // big screen: a thick orange bar between beats (every 4 steps)
   if (big) {
-    og.strokeStyle = FG; og.lineWidth = 3;
-    for (let s = 4; s < STEPS; s += 4) { const x = GX + s * cw - 0.5; og.beginPath(); og.moveTo(x, gy); og.lineTo(x, gy + rows * rh); og.stroke(); }
+    og.fillStyle = '#ff8a1f';
+    for (let s = 4; s < STEPS; s += 4) og.fillRect(GX + s * cw - 3.5, gy - 4, 6, rows * rh + 8);
     og.lineWidth = 1;
   }
   // step entry: a dashed box round the step the next key will be written on
