@@ -1068,6 +1068,8 @@ function drawOled() {
   og.textAlign = 'left';
   og.fillStyle = DIM; og.fillRect(12, 28, OW - 24, 1);
   const { cw, rh, rows, gy } = gridGeom();
+  // on the big screen the square outlines are brighter and thicker, so each step stands apart
+  const big = $('unit').classList.contains('zoom'), LINE = big ? '#71889a' : DIM, LW = big ? 2 : 1;
   og.font = F(17);
   if (!isMel()) {
     TRACKS.forEach((tr, i) => {
@@ -1078,7 +1080,7 @@ function drawOled() {
       for (let s = 0; s < STEPS; s++) {
         const x = GX + s * cw, lit = pat().drums[i][s], isPh = ph && ph.step === s;
         if (lit) { og.fillStyle = on ? FG : MID; og.globalAlpha = 0.35 + 0.65 * hitVel(lit); og.fillRect(x + 1, y + 2, cw - 3, rh - 4); og.globalAlpha = 1; if (isPh) { og.fillStyle = BG; og.fillRect(x + 4, y + 5, cw - 9, rh - 10); } }
-        else { og.strokeStyle = isPh ? FG : DIM; og.lineWidth = 1; og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5); }
+        else { og.strokeStyle = isPh ? FG : LINE; og.lineWidth = LW; og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5); og.lineWidth = 1; }
       }
     });
   } else {
@@ -1090,8 +1092,8 @@ function drawOled() {
       og.fillText(noteName(r + root), 15, y + rh / 2 + 1);
       for (let s = 0; s < STEPS; s++) {
         const x = GX + s * cw;
-        og.strokeStyle = s >= m.len ? '#1a2229' : (s === sAbs ? FG : DIM);
-        og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5);
+        og.strokeStyle = s >= m.len ? '#1a2229' : (s === sAbs ? FG : LINE);
+        og.lineWidth = LW; og.strokeRect(x + 1.5, y + 2.5, cw - 4, rh - 5); og.lineWidth = 1;
       }
     }
     const off = [0, 0];   // notes hidden above, below
@@ -1113,6 +1115,12 @@ function drawOled() {
     og.font = F(15); og.fillStyle = FG;
     if (off[0]) og.fillText('▲' + off[0] + ' MORE', 12, gy - 4);
     if (off[1]) og.fillText('▼' + off[1] + ' MORE', 12, gy + rows * rh + 5);
+  }
+  // big screen: a bright line between beats (every 4 steps)
+  if (big) {
+    og.strokeStyle = MID; og.lineWidth = 2;
+    for (let s = 4; s < STEPS; s += 4) { const x = GX + s * cw - 0.5; og.beginPath(); og.moveTo(x, gy); og.lineTo(x, gy + rows * rh); og.stroke(); }
+    og.lineWidth = 1;
   }
   // step entry: a dashed box round the step the next key will be written on
   if (stepRec()) {
